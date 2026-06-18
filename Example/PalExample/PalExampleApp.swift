@@ -1,17 +1,14 @@
-//
-//  PalExampleApp.swift
-//  PalExample
-//
-//  Created by Mesrine on 30/5/26.
-//
-
 import SwiftUI
 
+/// The showcase app entry point. Owns the composition root and shows the root view.
 @main
 struct PalExampleApp: App {
+
+    @State private var container = AppContainer()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView(container: container)
         }
     }
 }

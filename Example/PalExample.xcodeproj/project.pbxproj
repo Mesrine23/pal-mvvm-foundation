@@ -8,6 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		D77700732FDADB89000D9E3E /* PalCore in Frameworks */ = {isa = PBXBuildFile; productRef = D77700722FDADB89000D9E3E /* PalCore */; };
+		D7770A000000000000000011 /* PalPersistence in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000010 /* PalPersistence */; };
+		D7770A000000000000000021 /* PalNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000020 /* PalNetworking */; };
+		D7770A000000000000000031 /* PalAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000030 /* PalAuth */; };
+		D7770A000000000000000041 /* PalPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000040 /* PalPresentation */; };
+		D7770A000000000000000051 /* PalNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000050 /* PalNavigation */; };
+		D7770A000000000000000061 /* PalDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000060 /* PalDesignSystem */; };
+		D7770A000000000000000071 /* PalAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000070 /* PalAnalytics */; };
+		D7770A000000000000000081 /* PalFeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000080 /* PalFeatureFlags */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +36,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				D77700732FDADB89000D9E3E /* PalCore in Frameworks */,
+				D7770A000000000000000011 /* PalPersistence in Frameworks */,
+				D7770A000000000000000021 /* PalNetworking in Frameworks */,
+				D7770A000000000000000031 /* PalAuth in Frameworks */,
+				D7770A000000000000000041 /* PalPresentation in Frameworks */,
+				D7770A000000000000000051 /* PalNavigation in Frameworks */,
+				D7770A000000000000000061 /* PalDesignSystem in Frameworks */,
+				D7770A000000000000000071 /* PalAnalytics in Frameworks */,
+				D7770A000000000000000081 /* PalFeatureFlags in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +87,14 @@
 			name = PalExample;
 			packageProductDependencies = (
 				D77700722FDADB89000D9E3E /* PalCore */,
+				D7770A000000000000000010 /* PalPersistence */,
+				D7770A000000000000000020 /* PalNetworking */,
+				D7770A000000000000000030 /* PalAuth */,
+				D7770A000000000000000040 /* PalPresentation */,
+				D7770A000000000000000050 /* PalNavigation */,
+				D7770A000000000000000060 /* PalDesignSystem */,
+				D7770A000000000000000070 /* PalAnalytics */,
+				D7770A000000000000000080 /* PalFeatureFlags */,
 			);
 			productName = PalExample;
 			productReference = D763A29E2FCB38A0005CF20F /* PalExample.app */;
@@ -353,6 +377,38 @@
 		D77700722FDADB89000D9E3E /* PalCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PalCore;
+		};
+		D7770A000000000000000010 /* PalPersistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalPersistence;
+		};
+		D7770A000000000000000020 /* PalNetworking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalNetworking;
+		};
+		D7770A000000000000000030 /* PalAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalAuth;
+		};
+		D7770A000000000000000040 /* PalPresentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalPresentation;
+		};
+		D7770A000000000000000050 /* PalNavigation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalNavigation;
+		};
+		D7770A000000000000000060 /* PalDesignSystem */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalDesignSystem;
+		};
+		D7770A000000000000000070 /* PalAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalAnalytics;
+		};
+		D7770A000000000000000080 /* PalFeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalFeatureFlags;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -40,7 +40,7 @@ The docs serve both the engineers adopting Pal and the agents working in it. Pal
 swift build && swift test
 ```
 
-The `Example/` app consumes the package via a local path and dogfoods the products. **Status:** 9 of 10 products are shipped; `PalDebugKit` is the next build phase — see [CONTRIBUTING](CONTRIBUTING.md) for the phase log.
+The `Example/` app is a runnable showcase — it consumes the package via a local path and dogfoods every shipped product: a canonical Users slice (list → detail over a public API) plus a Settings screen (theming, feature flag, demo Keychain session, app info). **Status:** 9 of 10 products are shipped; `PalDebugKit` is the next product — see [CONTRIBUTING](CONTRIBUTING.md) for the phase log.
 
 ## License
 
