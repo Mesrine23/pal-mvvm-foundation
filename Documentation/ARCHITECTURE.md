@@ -28,7 +28,7 @@ PalPersistence   PalNetworking   PalPresentation   PalNavigation
         ▲             ▲               ▲                (no deps)
         └── PalAuth ──┘               │
                                 PalDesignSystem
-PalAnalytics · PalFeatureFlags (→ Core)
+PalAnalytics · PalFeatureFlags · PalNotifications (→ Core)
 PalDebugKit (→ Core, Networking, Persistence)
 ```
 
@@ -43,6 +43,7 @@ PalDebugKit (→ Core, Networking, Persistence)
 | `PalDesignSystem` | Opt-in Theme (system default), `.textStyle`, ErrorView/SectionErrorView/EmptyStateView/LoadingView, `.appAlert`, SwiftUI utilities, en+el catalogs |
 | `PalAnalytics` / `PalFeatureFlags` | Provider-agnostic seams + NoOp/Console/Composite/InMemory impls |
 | `PalDebugKit` | Shake debug menu (overlay window): network Logs, API environment switcher, Mocks — runtime-enabled, gated app-side by the `DEBUGKIT` flag |
+| `PalNotifications` | `NotificationService`: permission, local scheduling (immediate/delayed/calendar), APNs token plumbing, tap-response + push-event streams, foreground policy, categories |
 
 Each product has a usage guide in [Documentation/Products/](Products/).
 
@@ -129,6 +130,8 @@ final class AppContainer {
 **Modals (hybrid)** — screen-local UI modals (pickers/filters; need Bindings into the presenting VM) stay view-level; multi-screen flow modals (checkout/onboarding/auth-expired) go through `router.present(_:)` with a nested `RouterView`. Presentations are Identifiable items, never booleans.
 
 **Deep links** — `DeepLinkHandler` maps URL → routes + strategy; `.append` protects in-progress user state, `.replace` resets. The push-launch flow is just "set the path".
+
+**Notifications** — one `NotificationService` at the composition root; creating it claims the delegate seat, so cold-start taps are captured (buffered until `responses` is first observed). Taps become routes at the root: `userInfo` carries an **id**, the coordinator re-fetches and pushes. APNs tokens arrive via a ~5-line app-side `UIApplicationDelegateAdaptor` forwarding into the service; provider SDKs stay app-side.
 
 **Pull-to-refresh** — drive it from `Loader.refresh(_:)` (reloads in place — no `.loading` transition, since the refresh control is the indicator), not `performLoad`. And keep the scrollable (`List`) mounted: render empty/error as **overlays** rather than `switch`-ing the `List` out for an `EmptyStateView`/`ErrorView`. Flipping `.loading` or swapping the scrollable while `.refreshable` is still spinning fights the refresh control ("change the refresh control while it is not idle") and drops the first update. The initial-load `LoadingView` swap is fine (no refresh control yet).
 

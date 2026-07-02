@@ -64,11 +64,11 @@ Each phase ends GREEN: `swift build` + `swift test` pass and the Example app com
 | 9 | PalDebugKit — NetworkLogStore + Inspector/Mock interceptors · overlay shake menu · Logs/API/Mocks · `baseURLProvider` env switching | ✅ | `v0.13.0` |
 | 10 | Example app — composition root (manual DI) · canonical Users slice (list/detail) + Settings · dogfoods every product | ✅ | `v0.12.0` |
 | 11 (deferred) | Broad tests + PalTestSupport · reachability · streaming download-to-disk | — | — |
-| 12 (planned) | Notifications — push + local | — | — |
+| 12 | PalNotifications — NotificationService · permission · local scheduling (immediate/delayed/calendar) · APNs token plumbing · response routing · foreground policy · categories | ✅ | `v0.14.0` (unreleased) |
 
-Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-chain + Router + Loader (incl. `refresh`) + DebugKit (log ring buffer, inspector capture, mock interceptor 2xx/non-2xx + global-off un-mocks-all, env store broadcast/re-select/removal-fallback, resolver fallback). The Example app builds for the iOS Simulator (0 warnings), dogfooding **all 10 products** (DebugKit wired behind `DEBUGKIT`).
+Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-chain + Router + Loader (incl. `refresh`) + DebugKit (log ring buffer, inspector capture, mock interceptor 2xx/non-2xx + global-off un-mocks-all, env store broadcast/re-select/removal-fallback, resolver fallback) + Notifications (content/trigger/options/status/category mapping via a spy backend, response broadcast + cold-start buffering, push events + latest-replay). The Example app builds for the iOS Simulator (0 warnings), dogfooding **all 11 products** (DebugKit wired behind `DEBUGKIT`).
 
-> **Toward `v1.0.0`:** all 10 products ship as of `v0.13.0` (runtime-confirmed in the simulator). `1.0.0` follows a planned **Notifications** (push + local) feature.
+> **Toward `v1.0.0`:** all 11 products are built; PalNotifications (Phase 12) sits on `develop` awaiting owner runtime confirmation, then releases to `main` as **`v0.14.0`**. `1.0.0` follows.
 
 ## Deviations log
 
