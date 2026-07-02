@@ -12,16 +12,27 @@ final class EnvironmentStore {
     private(set) var selected: [ClientID: APIEnvironment] = [:]
 
     @ObservationIgnored private let defaults: UserDefaultsService
-    @ObservationIgnored let changes: AsyncStream<EnvironmentChanged>
-    @ObservationIgnored private let continuation: AsyncStream<EnvironmentChanged>.Continuation
+    @ObservationIgnored private var observers: [UUID: AsyncStream<EnvironmentChanged>.Continuation] = [:]
 
     init(defaults: UserDefaultsService = UserDefaultsService()) {
         self.defaults = defaults
-        let (stream, continuation) = AsyncStream.makeStream(of: EnvironmentChanged.self)
-        self.changes = stream
-        self.continuation = continuation
         let rawSelected = defaults.get(.palDebugSelectedEnvironments) ?? [:]
         self.selected = rawSelected.reduce(into: [:]) { $0[ClientID($1.key)] = $1.value }
+    }
+
+    /// A live stream of environment switches. Every call returns an **independent
+    /// subscription** — multiple observers each receive every change, and a new
+    /// subscription after a cancelled one starts clean (an `AsyncStream` is unicast
+    /// and terminates permanently on cancellation, so sharing one instance would
+    /// starve later observers).
+    func changes() -> AsyncStream<EnvironmentChanged> {
+        let (stream, continuation) = AsyncStream.makeStream(of: EnvironmentChanged.self)
+        let id = UUID()
+        observers[id] = continuation
+        continuation.onTermination = { _ in
+            Task { @MainActor [weak self] in self?.observers[id] = nil }
+        }
+        return stream
     }
 
     /// Registers a client's environments (merging any persisted custom ones) and
@@ -35,11 +46,13 @@ final class EnvironmentStore {
         }
     }
 
-    /// Selects an environment and broadcasts the change.
+    /// Selects an environment and broadcasts the change. Re-selecting the active
+    /// environment is a no-op — a broadcast triggers the app's full reset.
     func select(_ environment: APIEnvironment, for clientID: ClientID) {
+        guard selected[clientID]?.id != environment.id else { return }
         selected[clientID] = environment
         persistSelected()
-        continuation.yield(EnvironmentChanged(clientID: clientID, environment: environment))
+        broadcast(EnvironmentChanged(clientID: clientID, environment: environment))
     }
 
     func addCustom(_ environment: APIEnvironment, for clientID: ClientID) {
@@ -49,6 +62,9 @@ final class EnvironmentStore {
         environments[clientID, default: []].append(environment)
     }
 
+    /// Removes a custom environment. If it was the active one, selection falls back
+    /// to the first remaining environment **and broadcasts** — requests already
+    /// resolve against the new base URL, so the app's reset must run.
     func removeCustom(_ environment: APIEnvironment, for clientID: ClientID) {
         guard environment.isCustom else { return }
         var byClient = defaults.get(.palDebugCustomEnvironments) ?? [:]
@@ -56,8 +72,18 @@ final class EnvironmentStore {
         defaults.set(byClient, for: .palDebugCustomEnvironments)
         environments[clientID]?.removeAll { $0.id == environment.id }
         if selected[clientID]?.id == environment.id {
-            selected[clientID] = environments[clientID]?.first
+            let fallback = environments[clientID]?.first
+            selected[clientID] = fallback
             persistSelected()
+            if let fallback {
+                broadcast(EnvironmentChanged(clientID: clientID, environment: fallback))
+            }
+        }
+    }
+
+    private func broadcast(_ change: EnvironmentChanged) {
+        for observer in observers.values {
+            observer.yield(change)
         }
     }
 
