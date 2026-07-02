@@ -20,8 +20,8 @@
 | swift-tools-version | **6.0** (not bleeding edge; newer features later behind `#if compiler`) |
 | Deployment floor | **iOS 17** for the package (Example app may target latest) |
 | External dependencies | **ZERO.** Swinject appears only app-side (Example app + docs snippets) |
-| Versioning | `v0.1.0` at first green scaffold → bump per package landed → `1.0.0` when the first real app ships. Early apps may track `main` |
-| Repo visibility | Public (open for feedback pre-1.0) |
+| Versioning | SemVer via git tags — **`v1.0.0` shipped 2026-07-02** (all 11 products, two dogfood apps). Breaking = major with deprecation-first (§19), enforced by the `api-stability` CI gate; consumers pin tags with `from:` |
+| Repo visibility | Public (MIT) |
 | License | **MIT** |
 | CI | GitHub Actions: `swift build && swift test` on push/PR (macOS runner) |
 
@@ -191,12 +191,12 @@ Rules:
 - **`DEBUGKIT` recipe (per app):** add `DEBUGKIT` to `SWIFT_ACTIVE_COMPILATION_CONDITIONS` of each configuration that should carry tools; wrap `PalDebugTools.enable(…)` + Inspector/Mock interceptor wiring in `#if DEBUGKIT` at the composition root.
 - **Release:** SemVer **tags** on `main`; consumers pin to tags (never a branch).
 - **Source control (GitFlow):** `main` = live/consumer branch (tagged releases only) · `develop` = integration · `feature/{name}` off develop → back to develop · `hotfix/{name}` off main → merged to **both** main + develop (tag a patch). Contributors/agents push the `feature/*` branch and **request review before merging** (active from the Notifications feature onward).
-- **Compatibility & evolution (open to extension, closed to modification):** the public API is a contract for the apps on Pal — evolve **additively** (new types, parameters with defaults, protocol requirements **only with default impls**), **deprecate don't delete** (`@available(*, deprecated, renamed:)`, remove only at a major), and treat a new public enum `case` as breaking. SemVer mapping: additive → minor · fix → patch · breaking → major (with deprecations first). Pre-1.0 a minor may break, so apps pin `.upToNextMinor`. There is no consumer-tracked `release/*` branch (tags are the channel); a `release/*` branch, if ever used, is a short-lived hardening branch, and a `1.x` maintenance line exists only to backport across a major. **At 1.0.0, add `swift package diagnose-api-breaking-changes` as a required CI gate** against the previous release tag.
+- **Compatibility & evolution (open to extension, closed to modification):** the public API is a contract for the apps on Pal — evolve **additively** (new types, parameters with defaults, protocol requirements **only with default impls**), **deprecate don't delete** (`@available(*, deprecated, renamed:)`, remove only at a major), and treat a new public enum `case` as breaking. SemVer mapping: additive → minor · fix → patch · breaking → major (with deprecations first); since `1.0.0`, `from:` pinning is safe for consumers. There is no consumer-tracked `release/*` branch (tags are the channel); a `release/*` branch, if ever used, is a short-lived hardening branch, and a `1.x` maintenance line exists only to backport across a major. **The `api-stability` CI gate runs `swift package diagnose-api-breaking-changes`** against the latest release tag and fails on a break (active since `v1.0.0`).
 
 ## 20. Checklists
 
 **Pre-app#1:** pagination pattern design · image strategy confirmation per app.
-**Pre-1.0:** versioning/deprecation policy **defined** (§19 Compatibility & evolution) · public API freeze review + `diagnose-api-breaking-changes` CI gate at 1.0 · DocC catalog consideration · broad test coverage + `PalTestSupport`. *(LICENSE chosen: MIT.)*
+**Resolved at `v1.0.0`:** versioning/deprecation policy defined (§19) · public API freeze review done (clean) · `diagnose-api-breaking-changes` CI gate active. **Post-1.0 backlog (all additive):** DocC catalog · broad test coverage + `PalTestSupport` (Phase 11) · a networked second test app. *(LICENSE: MIT.)*
 
 ## 21. PalNotifications (push + local)
 
