@@ -4,7 +4,12 @@ import SwiftUI
 @main
 struct PalExampleApp: App {
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var container = AppContainer()
+
+    init() {
+        appDelegate.notifications = container.notifications
+    }
 
     var body: some Scene {
         WindowGroup {

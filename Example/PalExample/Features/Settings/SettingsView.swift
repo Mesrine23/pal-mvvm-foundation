@@ -1,5 +1,6 @@
 import SwiftUI
 import PalDesignSystem
+import PalNotifications
 
 /// The settings tab — theming, feature flags, a demo session, and app info.
 struct SettingsView: View {
@@ -34,6 +35,29 @@ struct SettingsView: View {
                     }
                 }
             }
+            Section("Notifications") {
+                LabeledContent("Permission", value: viewModel.notificationStatusText)
+                if viewModel.notificationStatus == .notDetermined {
+                    Button("Request permission") {
+                        Task { await viewModel.requestNotificationPermission() }
+                    }
+                }
+                Button("Notify now (tap the banner!)") {
+                    Task { await viewModel.notifyNow() }
+                }
+                Button("Remind me in 5 seconds") {
+                    Task { await viewModel.remindInFiveSeconds() }
+                }
+                Button("Register for push") {
+                    viewModel.registerForPush()
+                }
+                if let registration = viewModel.pushRegistrationText {
+                    Text(registration)
+                        .font(.caption.monospaced())
+                        .lineLimit(3)
+                        .foregroundStyle(.secondary)
+                }
+            }
             Section("About") {
                 LabeledContent("Version", value: viewModel.appVersion)
             }
@@ -41,5 +65,6 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .appAlert($viewModel.alert)
         .task { await viewModel.onAppear() }
+        .task { await viewModel.observePushEvents() }
     }
 }

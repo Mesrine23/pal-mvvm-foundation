@@ -19,6 +19,11 @@ extension AnalyticsEvent {
         AnalyticsEvent(name: "favorite_toggled", parameters: ["on": .bool(on)])
     }
 
+    /// A local notification was scheduled.
+    static func notificationScheduled(_ id: String) -> AnalyticsEvent {
+        AnalyticsEvent(name: "notification_scheduled", parameters: ["id": .string(id)])
+    }
+
     /// A demo session started.
     static var loggedIn: AnalyticsEvent { AnalyticsEvent(name: "logged_in") }
 

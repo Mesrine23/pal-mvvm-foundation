@@ -9,6 +9,7 @@ import PalDesignSystem
 import PalAnalytics
 import PalFeatureFlags
 import PalDebugKit
+import PalNotifications
 
 @Suite("Package smoke")
 struct ModuleImportSmokeTests {

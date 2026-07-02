@@ -41,6 +41,7 @@ Products and their **only allowed** dependencies (downward only, enforced in `Pa
 | `PalAnalytics` | Core |
 | `PalFeatureFlags` | Core |
 | `PalDebugKit` | Core, Networking, Persistence (NOT DesignSystem — debug UI is self-contained) |
+| `PalNotifications` | Core (+ the system `UserNotifications` framework) |
 | `Example` app | everything + Swinject (app-side) |
 
 Rules:
@@ -197,7 +198,18 @@ Rules:
 **Pre-app#1:** pagination pattern design · image strategy confirmation per app.
 **Pre-1.0:** versioning/deprecation policy **defined** (§19 Compatibility & evolution) · public API freeze review + `diagnose-api-breaking-changes` CI gate at 1.0 · DocC catalog consideration · broad test coverage + `PalTestSupport`. *(LICENSE chosen: MIT.)*
 
-## 21. Implementation status & deviations log
+## 21. PalNotifications (push + local)
+
+- **Scope v1:** typed permission (status/options) · local scheduling — `.immediate` (the fire-now, action-triggered client-side notification) / `.after(Duration)` / `.at(DateComponents, repeats:)` · APNs registration plumbing (token/failure as events; provider SDKs stay app-side, same seam philosophy as Analytics) · tap-response routing · foreground presentation policy · category/action registration · badge.
+- **DAG edge → Core only**; imports the system `UserNotifications` framework (zero *external* dependencies holds). Callers never import UserNotifications for the basics — statuses/options/presentation are Pal's own `Sendable` types.
+- **`NotificationService` is constructor-injected, no singleton.** Creating it claims the `UNUserNotificationCenterDelegate` seat — create it before launch finishes (a composition-root property), so cold-start taps are captured.
+- **Streams follow the broadcast rule:** `responses` / `pushEvents` return an independent subscription per access (the DebugKit `environmentChanges` lesson, baked in from day one). Responses arriving before the first subscriber **buffer and replay** (cold-start tap → route); the **latest push event replays** to late subscribers (a token is state).
+- **UIKit containment:** only `registerForRemoteNotifications()` touches UIKit (`#if canImport(UIKit)`, extension-unavailable); APNs callbacks arrive via the app's ~5-line `UIApplicationDelegateAdaptor` forwarding into `handleDeviceToken(_:)` / `handleRegistrationFailure(_:)`.
+- **Testing seam:** an internal backend protocol wraps `UNUserNotificationCenter` (which needs an app host); the machinery is spy-tested in the package; the delegate-callback path (`UNNotification*` types are not constructible) is dogfooded in the Example.
+- **`userInfo` crosses as `[String: String]`** (strings + stringified numbers) — deep-link keys and entity ids; complex payload handling stays app-side.
+- **Guidance-only, deliberately outside v1:** Notification Service/Content Extensions (rich push — app targets, can't usefully ship from SPM); time-sensitive/critical interruption levels are additive later.
+
+## 22. Implementation status & deviations log
 
 Phase-by-phase status and the audit trail of approved deviations from this design are contributor-facing, not part of the design reference — they live in **[CONTRIBUTING](../CONTRIBUTING.md)**.
 

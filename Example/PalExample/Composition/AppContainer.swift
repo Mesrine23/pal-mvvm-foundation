@@ -4,6 +4,7 @@ import PalAuth
 import PalAnalytics
 import PalFeatureFlags
 import PalDebugKit
+import PalNotifications
 
 /// The app's composition root — manual constructor injection, no DI framework.
 /// One factory method per feature; dependencies are built once and shared.
@@ -18,6 +19,10 @@ final class AppContainer {
 
     /// The in-memory feature-flag provider, seeded at launch.
     let flags: InMemoryFeatureFlagsProvider
+
+    /// The notifications facade — created at launch so it claims the
+    /// notification-center delegate seat before cold-start taps arrive.
+    let notifications = NotificationService()
 
     private let defaults = UserDefaultsService()
     private let cache = MemoryCache()
@@ -69,6 +74,16 @@ final class AppContainer {
 
     /// Builds the settings ViewModel.
     func makeSettingsViewModel() -> SettingsViewModel {
-        SettingsViewModel(tokenStore: tokenStore, flags: flags, analytics: analytics)
+        SettingsViewModel(
+            tokenStore: tokenStore,
+            flags: flags,
+            analytics: analytics,
+            notifications: notifications
+        )
+    }
+
+    /// Resolves a user by id for notification deep links (re-fetch in the destination).
+    func user(withID id: Int) async throws -> User? {
+        try await usersRepo.getUsers(forceRefresh: false).first { $0.id == id }
     }
 }

@@ -18,6 +18,7 @@ A reusable, **zero-dependency** iOS foundation — one Swift Package, multiple f
 | `PalAnalytics` | Provider-agnostic analytics seam + no-op/console/composite | [→](Documentation/Products/PalAnalytics.md) |
 | `PalFeatureFlags` | Synchronous feature-flag seam + in-memory/no-op | [→](Documentation/Products/PalFeatureFlags.md) |
 | `PalDebugKit` | Shake-to-debug: network logs, environment switcher, mocks | [→](Documentation/Products/PalDebugKit.md) |
+| `PalNotifications` | Push + local notifications: permission, scheduling, APNs plumbing, tap routing | [→](Documentation/Products/PalNotifications.md) |
 
 ## Install
 
@@ -37,6 +38,6 @@ In Xcode: **File ▸ Add Package Dependencies…**, paste the repo URL, pin a ve
 swift build && swift test
 ```
 
-The `Example/` app is a runnable showcase: it consumes the package via a local path and dogfoods the products — a canonical Users slice (list → detail over a public API) plus a Settings screen (theming, a feature flag, a demo Keychain session, app info).
+The `Example/` app is a runnable showcase: it consumes the package via a local path and dogfoods the products — a canonical Users slice (list → detail over a public API) plus a Settings screen (theming, a feature flag, a demo Keychain session, a notifications demo, app info).
 
-Xcode file templates for scaffolding use cases and view models live in [`Templates/Xcode/`](Templates/Xcode/) — see its README to install them.
+Xcode file templates for scaffolding use cases, view models, and coordinators live in [`Templates/Xcode/`](Templates/Xcode/) — see its README to install them.
