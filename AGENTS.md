@@ -20,7 +20,7 @@ Every change must leave `swift build` + `swift test` green and the Example app c
 
 ## Package dependency DAG (enforced — never add edges)
 
-`PalCore→∅` · `PalPersistence→Core` · `PalNetworking→Core` · `PalAuth→Core,Networking,Persistence` · `PalPresentation→Core` · `PalNavigation→∅` · `PalDesignSystem→Core,Presentation` · `PalAnalytics→Core` · `PalFeatureFlags→Core` · `PalDebugKit→Core,Networking,Persistence` (not DesignSystem).
+`PalCore→∅` · `PalPersistence→Core` · `PalNetworking→Core` · `PalAuth→Core,Networking,Persistence` · `PalPresentation→Core` · `PalNavigation→∅` · `PalDesignSystem→Core,Presentation` · `PalAnalytics→Core` · `PalFeatureFlags→Core` · `PalDebugKit→Core,Networking,Persistence` (not DesignSystem) · `PalNotifications→Core`.
 
 Every target declares ALL modules it directly imports (no transitive reliance). No SwiftUI in PalCore. Zero external dependencies in the package — Swinject exists only app-side (Example).
 
@@ -54,6 +54,12 @@ Every target declares ALL modules it directly imports (no transitive reliance). 
 
 Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Value>` (each drives a `ViewState`: `idle / loading(previous:) / loaded / failed(error, previous:)`); call `loader.load { }` (auto-cancels the previous in-flight load, swallows cancellation, maps to `PresentableError`); the View switches on `viewModel.‹loader›.state`. Navigation goes through the screen's `NavigationDelegate`, implemented by the feature coordinator as one-liners over the typed `Router`. Dependencies arrive via `init` (constructor injection from the app-side factory). Load failures → `ViewState`; action failures → `.appAlert`.
 
+## Patterns & evolution (binding)
+
+- **Delegation (child → owner):** when a child reports back to its owner (navigation, flow completion), use a `‹Context›Delegate` — `@MainActor`, `AnyObject`, held **weak**, intent-named. A closure for a one-shot callback; an `AsyncStream` for broadcast events (`AuthEvent`). See [DECISIONS §6](Documentation/DECISIONS.md).
+- **Compatibility — open to extension, closed to modification:** the public API is a contract for the apps on Pal. Additive only; new protocol requirements ship with default impls; **deprecate (`@available`), never delete** pre-major; consumers track SemVer **tags**, never branches.
+- **Source control:** GitFlow (`main` live/tagged · `develop` integration · `feature/*` off develop · `hotfix/*` off main → both). **Push the task branch and ask before merging.** Full policy in [CONTRIBUTING](CONTRIBUTING.md).
+
 ## Documentation map
 
 - [Getting Started](Documentation/GettingStarted.md) — install → composition root → first feature.
@@ -62,4 +68,4 @@ Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Val
 - [DECISIONS](Documentation/DECISIONS.md) — the design and its rationale (a living document, open to discussion).
 - [CONTRIBUTING](CONTRIBUTING.md) — build/verify, **implementation status & phase log**, and the deviations log.
 
-**Status lives in CONTRIBUTING** (single source — do not restate it here, so it can't go stale). At a glance: all 10 products are built. **When you change an API, a decision, or a product's behavior, update the affected docs in the same change.**
+**Status lives in CONTRIBUTING** (single source — do not restate it here, so it can't go stale). At a glance: all 11 products are built. **When you change an API, a decision, or a product's behavior, update the affected docs in the same change.**

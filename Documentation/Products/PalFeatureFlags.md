@@ -7,7 +7,7 @@
 ## What it gives you
 
 - **`FeatureFlagsProvider`** — `isEnabled(_ flag: FeatureFlag) -> Bool` (synchronous).
-- **`FeatureFlag`** — `key` + `defaultValue` (so a missing provider/value degrades safely).
+- **`FeatureFlag`** — `key` + `defaultValue` (so a missing provider/value degrades safely). Initializer: `FeatureFlag(key: String, defaultValue: Bool = false)`.
 - **Shipped impls** — `InMemoryFeatureFlagsProvider` (seed once, read synchronously), `NoOpFeatureFlagsProvider` (defaults only).
 
 ## Usage

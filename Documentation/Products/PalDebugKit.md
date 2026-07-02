@@ -8,7 +8,7 @@
 
 - **Logs** — a live, searchable network inspector: method, URL, status, real timing, redacted headers, body preview. A `DebugInspectorInterceptor` (outermost) feeds an observable, capped ring-buffer store (session-only, never persisted).
 - **API switcher** — change the active environment at runtime; the next request resolves the new base URL with no client rebuild. App-defined `APIEnvironment`s, plus user-added custom entries.
-- **Mocks** — stub any captured call: tap it (body auto-seeded from the response), edit status/latency/body, toggle it. A `MockInterceptor` short-circuits the chain; mocked exchanges still appear in Logs.
+- **Mocks** — stub any captured call: tap it (body auto-seeded from the response), edit status/body, toggle it. A `MockInterceptor` short-circuits the chain; mocked exchanges still appear in Logs.
 
 ## Wiring (composition root)
 
@@ -65,6 +65,9 @@ Full opt-out is absolute: an app that never links PalDebugKit has zero footprint
 
 - **Custom tabs:** `present { /* your SwiftUI tabs */ }` appends app modules via a `@ViewBuilder` slot (no type-erased registry, no `AnyView`).
 - **Logs are session-only** (in-memory ring buffer); **mocks, custom environments, and the selected environment persist** via typed `DefaultsKey`.
+- `environmentChanges` hands out an **independent subscription per access** — observe from several tasks or resubscribe freely.
+- Mock bodies seed from the captured **preview** (capped ~20 KB) — a very large response seeds a truncated stub; paste the full body if you need it.
+- Shake rides the UIKit responder chain — while a text field has the keyboard up, the shake may not reach the detector; dismiss the keyboard first.
 - The debug menu UI is developer-facing and intentionally **not localized** (unlike PalDesignSystem/PalPresentation).
 - **Not in v1** (additive later): Flags viewer/overrides, Saved Logs export, language override, version spoofing.
 

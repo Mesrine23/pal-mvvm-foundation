@@ -6,9 +6,12 @@ import PalCore
 import PalDesignSystem
 import PalFeatureFlags
 import PalNetworking
+import PalNotifications
+import PalPresentation
 
 /// Drives the settings screen: a live feature-flag toggle, a demo Keychain-backed
-/// session, app info, and an action-failure/confirmation alert.
+/// session, the notifications demo (permission, local scheduling, APNs), app info,
+/// and an action-failure/confirmation alert.
 @MainActor @Observable
 final class SettingsViewModel {
 
@@ -23,31 +26,102 @@ final class SettingsViewModel {
     /// Whether a demo session token is stored in the Keychain.
     var isLoggedIn = false
 
+    /// The current notification permission.
+    var notificationStatus: NotificationAuthorizationStatus = .notDetermined
+
+    /// The APNs token hex (or the registration failure message).
+    var pushRegistrationText: String?
+
     /// The action-failure / confirmation channel.
     var alert: AppAlert?
 
     @ObservationIgnored private let tokenStore: KeychainTokenStore
     @ObservationIgnored private let flags: InMemoryFeatureFlagsProvider
     @ObservationIgnored private let analytics: any AnalyticsTracker
+    @ObservationIgnored private let notifications: NotificationService
 
     /// Creates the ViewModel.
     init(
         tokenStore: KeychainTokenStore,
         flags: InMemoryFeatureFlagsProvider,
-        analytics: any AnalyticsTracker
+        analytics: any AnalyticsTracker,
+        notifications: NotificationService
     ) {
         self.tokenStore = tokenStore
         self.flags = flags
         self.analytics = analytics
+        self.notifications = notifications
         self.appVersion = "\(AppInfo.current.version) (\(AppInfo.current.build))"
         self.showsUserEmail = flags.isEnabled(.showsUserEmail)
     }
 
-    /// Loads session state and tracks the screen view.
+    /// Loads session + permission state and tracks the screen view.
     func onAppear() async {
         analytics.track(.screenViewed("settings"))
         let tokens = await tokenStore.tokens()
         isLoggedIn = tokens != nil
+        notificationStatus = await notifications.authorizationStatus()
+    }
+
+    // MARK: - Notifications demo
+
+    /// The permission state as display text.
+    var notificationStatusText: String {
+        switch notificationStatus {
+        case .notDetermined: String(localized: "Not asked")
+        case .denied: String(localized: "Denied")
+        case .authorized: String(localized: "Authorized")
+        case .provisional: String(localized: "Provisional")
+        case .ephemeral: String(localized: "Ephemeral")
+        }
+    }
+
+    /// Prompts for notification permission and refreshes the status row.
+    func requestNotificationPermission() async {
+        do {
+            _ = try await notifications.requestAuthorization()
+        } catch {
+            alert = .error(PresentableError(from: error))
+        }
+        notificationStatus = await notifications.authorizationStatus()
+    }
+
+    /// Fires a client-side notification NOW (the action-triggered path);
+    /// the foreground policy shows it as a banner even while the app is open.
+    func notifyNow() async {
+        do {
+            try await notifications.schedule(.demoSpotlight)
+            analytics.track(.notificationScheduled("demo-spotlight"))
+        } catch {
+            alert = .error(PresentableError(from: error))
+        }
+    }
+
+    /// Schedules a local notification 5 seconds out — background the app to see it.
+    func remindInFiveSeconds() async {
+        do {
+            try await notifications.schedule(.demoReminder, trigger: .after(.seconds(5)))
+            analytics.track(.notificationScheduled("demo-reminder"))
+        } catch {
+            alert = .error(PresentableError(from: error))
+        }
+    }
+
+    /// Kicks off APNs registration; the outcome lands in ``pushRegistrationText``.
+    func registerForPush() {
+        notifications.registerForRemoteNotifications()
+    }
+
+    /// Long-running observation of APNs registration outcomes (drive from `.task`).
+    func observePushEvents() async {
+        for await event in notifications.pushEvents {
+            switch event {
+            case .registered(let token):
+                pushRegistrationText = token.hexString
+            case .failed(let message):
+                pushRegistrationText = message
+            }
+        }
     }
 
     /// Saves a demo token to the Keychain (dogfoods PalAuth + Keychain).

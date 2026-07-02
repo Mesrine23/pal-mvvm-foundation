@@ -4,12 +4,15 @@ import Testing
 
 private struct SampleError: Error {}
 
+/// Compile-guards the canonical GettingStarted VM shape: `load() async` drives `.task`
+/// via `performLoad` (the closure returns `Value`), `refresh()` drives the retry button via `load`.
 @MainActor @Observable
 private final class ReferenceListViewModel {
     let items = Loader<[Int]>()
     private let fetch: @Sendable () async throws -> [Int]
     init(fetch: @escaping @Sendable () async throws -> [Int]) { self.fetch = fetch }
-    func load() { items.load { try await self.fetch() } }
+    func load() async { await items.performLoad { try await self.fetch() } }
+    func refresh() { items.load { try await self.fetch() } }
 }
 
 @MainActor
@@ -59,7 +62,9 @@ struct LoaderTests {
     @Test("Canonical VM-holds-Loader pattern compiles and loads")
     func referencePatternCompilesAndLoads() async throws {
         let viewModel = ReferenceListViewModel(fetch: { [1, 2, 3] })
-        viewModel.load()
+        await viewModel.load()
+        #expect(viewModel.items.state.value == [1, 2, 3])
+        viewModel.refresh()
         try await Task.sleep(for: .milliseconds(50))
         #expect(viewModel.items.state.value == [1, 2, 3])
     }

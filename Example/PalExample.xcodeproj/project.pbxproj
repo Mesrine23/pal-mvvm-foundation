@@ -17,6 +17,7 @@
 		D7770A000000000000000071 /* PalAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000070 /* PalAnalytics */; };
 		D7770A000000000000000081 /* PalFeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000080 /* PalFeatureFlags */; };
 		D7770A000000000000000091 /* PalDebugKit in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A000000000000000090 /* PalDebugKit */; };
+		D7770A0000000000000000A1 /* PalNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = D7770A0000000000000000A0 /* PalNotifications */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,7 @@
 				D7770A000000000000000071 /* PalAnalytics in Frameworks */,
 				D7770A000000000000000081 /* PalFeatureFlags in Frameworks */,
 				D7770A000000000000000091 /* PalDebugKit in Frameworks */,
+				D7770A0000000000000000A1 /* PalNotifications in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +100,7 @@
 				D7770A000000000000000070 /* PalAnalytics */,
 				D7770A000000000000000080 /* PalFeatureFlags */,
 				D7770A000000000000000090 /* PalDebugKit */,
+				D7770A0000000000000000A0 /* PalNotifications */,
 			);
 			productName = PalExample;
 			productReference = D763A29E2FCB38A0005CF20F /* PalExample.app */;
@@ -416,6 +419,10 @@
 		D7770A000000000000000090 /* PalDebugKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PalDebugKit;
+		};
+		D7770A0000000000000000A0 /* PalNotifications */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PalNotifications;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

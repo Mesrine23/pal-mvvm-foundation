@@ -1,6 +1,9 @@
 import Foundation
 import Testing
 @testable import PalNavigation
+#if canImport(SwiftUI)
+import SwiftUI
+#endif
 
 enum TestRoute: Routable {
     case list
@@ -132,4 +135,53 @@ struct RouterTests {
 
         #expect(router.path == [.settings, .detail(3)])
     }
+
+    #if canImport(SwiftUI)
+    @Test("RouterView doc snippet compiles — requires the root: route")
+    func routerViewDocSnippetCompiles() {
+        let router = Router<TestRoute>()
+        _ = RouterView(router: router, root: .list) { route in
+            switch route {
+            case .list:           Text("list")
+            case .detail(let id): Text("detail \(id)")
+            case .settings:       Text("settings")
+            }
+        }
+    }
+
+    @Test("The coordinator-triangle doc snippet compiles (coordinator + factory + RouterView)")
+    func coordinatorTriangleDocSnippetCompiles() {
+        let coordinator = TriangleCoordinator()
+        let factory = TriangleDestinationFactory()
+        _ = RouterView(router: coordinator.router, root: .list) { route in
+            factory.view(for: route, delegate: coordinator)
+        }
+        coordinator.showDetail(7)
+        #expect(coordinator.router.path == [.detail(7)])
+    }
+    #endif
 }
+
+#if canImport(SwiftUI)
+@MainActor private protocol TriangleNavigationDelegate: AnyObject {
+    func showDetail(_ id: Int)
+}
+
+/// Mirrors PalNavigation.md's "coordinator triangle": the coordinator owns the
+/// Router and implements the delegate; the factory holds the exhaustive switch.
+@MainActor private final class TriangleCoordinator: TriangleNavigationDelegate {
+    let router = Router<TestRoute>()
+    func showDetail(_ id: Int) { router.push(.detail(id)) }
+}
+
+@MainActor private struct TriangleDestinationFactory {
+    @ViewBuilder
+    func view(for route: TestRoute, delegate coordinator: TriangleCoordinator) -> some View {
+        switch route {
+        case .list:           Text("list")
+        case .detail(let id): Text("detail \(id)")
+        case .settings:       Text("settings")
+        }
+    }
+}
+#endif

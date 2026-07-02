@@ -20,8 +20,8 @@
 | swift-tools-version | **6.0** (not bleeding edge; newer features later behind `#if compiler`) |
 | Deployment floor | **iOS 17** for the package (Example app may target latest) |
 | External dependencies | **ZERO.** Swinject appears only app-side (Example app + docs snippets) |
-| Versioning | `v0.1.0` at first green scaffold → bump per package landed → `1.0.0` when the first real app ships. Early apps may track `main` |
-| Repo visibility | Public (open for feedback pre-1.0) |
+| Versioning | SemVer via git tags — **`v1.0.0` shipped 2026-07-02** (all 11 products, two dogfood apps). Breaking = major with deprecation-first (§19), enforced by the `api-stability` CI gate; consumers pin tags with `from:` |
+| Repo visibility | Public (MIT) |
 | License | **MIT** |
 | CI | GitHub Actions: `swift build && swift test` on push/PR (macOS runner) |
 
@@ -41,6 +41,7 @@ Products and their **only allowed** dependencies (downward only, enforced in `Pa
 | `PalAnalytics` | Core |
 | `PalFeatureFlags` | Core |
 | `PalDebugKit` | Core, Networking, Persistence (NOT DesignSystem — debug UI is self-contained) |
+| `PalNotifications` | Core (+ the system `UserNotifications` framework) |
 | `Example` app | everything + Swinject (app-side) |
 
 Rules:
@@ -86,6 +87,8 @@ Rules:
   - **Composition root** (app shell): wires client → repo → use case → ViewModel.
 - **Multi-call screens:** a composing use case returns a composite content model; parallel via `async let`, sequential `await` where data-dependent; structured concurrency auto-cancels siblings on failure. ViewModel stays a one-line `loader.load {}`.
 - **Partial-failure screens:** composite model fields typed `Result<Value, PresentableError>`; the use case wraps optional topics; View renders per-topic content or an inline `SectionErrorView`. Critical call still throws → whole screen fails. Default retry re-runs the whole composition.
+- **Delegation (child → owner):** when a child must report back to the owner that presents it (navigation, flow completion), use a `‹Context›Delegate` — `@MainActor`, `AnyObject`, held **weak**, intent-named methods. It is the default over passing closures or `Binding`s upward. A **closure** suffices for a single one-shot callback; an **`AsyncStream`** carries broadcast events (e.g. `AuthEvent`), not a delegate. Navigation seams keep the `‹Screen›NavigationDelegate` name (§4).
+- **Local mutation (re-fetch after write):** a local store has no `@Query`; after a write through the repository, re-fetch to reflect the change (coordinator → list VM `refresh()`). Keeps one source of truth and the read path unchanged.
 
 ## 7. DI & composition (app-side pattern — NOT in the foundation)
 
@@ -164,8 +167,8 @@ Rules:
 - Presentation: `.onShake { PalDebugTools.shared.present() }` opens the menu in a dedicated **overlay `UIWindow` above alert level** — a contained `#if canImport(UIKit)` bridge (the only Pal package importing UIKit; the macOS host build excludes it). The debug UI is developer-facing and **not localized**. The base URL resolves per request via a nonisolated `EnvironmentResolver` (backing the client's `baseURLProvider`); in-flight cancellation on switch is app-owned (run from the broadcast event).
 - **Logs:** `DebugInspectorInterceptor` (outermost) + `NetworkLogStore` actor — **capped ring buffer**, records request start (in-flight visible), timing, status/method/URL/headers/body; auth headers redacted in UI by default; observable store (UI subscribes — no singleton pokes).
 - **API switcher:** `APIEnvironment` = app-defined payload (name + baseURL + whatever the app bundles: OAuth creds, extra URLs) — a switch swaps the whole config atomically. DebugKit lists/persists selection (typed `DefaultsKey`); the APP supplies the apply hook. Switch sequence: cancel in-flight first → swap → broadcast one "environment changed" event (`AsyncStream`) → each layer cleans itself (tokens, cache, navigation). No restart (baseURL provider closure reads current env per request). Custom/localhost entries supported.
-- **Mocks:** `MockInterceptor` short-circuits the chain with stubbed `NetworkResponse`. Registry in memory, persisted as one JSON blob (Defaults helper), loaded once. Matching = method + path with query-normalization rules (never exact-URL equality). Capture→mock UX: toggle a logged call, **body auto-seeded from the captured response**, status editable; custom status honored WITH body; optional artificial latency. Mocked exchanges appear in Logs.
-- **Extensible from day one:** tabs register via `DebugModule` (title/icon/screen); apps append custom modules. Future modules (not v1): Flags viewer/overrides, Saved Logs export, language override, version spoofing.
+- **Mocks:** `MockInterceptor` short-circuits the chain with stubbed `NetworkResponse`. Registry in memory, persisted as one JSON blob (Defaults helper), loaded once. Matching = method + path with query-normalization rules (never exact-URL equality). Capture→mock UX: toggle a logged call, **body auto-seeded from the captured response**, status editable; custom status honored WITH body (non-2xx surfaces as `unacceptableStatus`). Mocked exchanges appear in Logs.
+- **Extensible from day one:** apps append custom tabs via the `@ViewBuilder` slot on `present(extraTabs:)` — no type-erased registry, honoring no-`AnyView`. Future modules (not v1): Flags viewer/overrides, Saved Logs export, language override, version spoofing.
 
 ## 17. Localization
 
@@ -179,21 +182,34 @@ Rules:
 - **Images:** default = native `AsyncImage` + documented `URLCache` sizing. Image-heavy apps adopt Nuke/Kingfisher **app-side**. No `PalImage` component in v1.
 - **Pagination:** known pattern-to-design before/with app #1 (no v1 machinery).
 - **Route payloads:** entities (not IDs) — restoration-unfriendly, accepted deliberately.
-- **Delegate growth:** watch during dogfooding; revisit if per-screen delegates bloat.
+- **Delegate growth:** watch during dogfooding; revisit if per-screen delegates bloat. (The delegation *pattern* is blessed — see §6.)
 - **`StateView`:** deliberately not shipped; explicit switch preferred by owner.
 
 ## 19. Workflows
 
 - **Live-edit while building an app:** app depends on Pal via Git URL pinned; to edit, drag the local Pal folder into the app's workspace (local override wins) → edit live → commit, push, tag → remove override → bump pin.
 - **`DEBUGKIT` recipe (per app):** add `DEBUGKIT` to `SWIFT_ACTIVE_COMPILATION_CONDITIONS` of each configuration that should carry tools; wrap `PalDebugTools.enable(…)` + Inspector/Mock interceptor wiring in `#if DEBUGKIT` at the composition root.
-- **Release:** semver tags; breaking changes only with major bumps after 1.0 (deprecation policy to be defined pre-1.0).
+- **Release:** SemVer **tags** on `main`; consumers pin to tags (never a branch).
+- **Source control (GitFlow):** `main` = live/consumer branch (tagged releases only) · `develop` = integration · `feature/{name}` off develop → back to develop · `hotfix/{name}` off main → merged to **both** main + develop (tag a patch). Contributors/agents push the `feature/*` branch and **request review before merging** (active from the Notifications feature onward).
+- **Compatibility & evolution (open to extension, closed to modification):** the public API is a contract for the apps on Pal — evolve **additively** (new types, parameters with defaults, protocol requirements **only with default impls**), **deprecate don't delete** (`@available(*, deprecated, renamed:)`, remove only at a major), and treat a new public enum `case` as breaking. SemVer mapping: additive → minor · fix → patch · breaking → major (with deprecations first); since `1.0.0`, `from:` pinning is safe for consumers. There is no consumer-tracked `release/*` branch (tags are the channel); a `release/*` branch, if ever used, is a short-lived hardening branch, and a `1.x` maintenance line exists only to backport across a major. **The `api-stability` CI gate runs `swift package diagnose-api-breaking-changes`** against the latest release tag and fails on a break (active since `v1.0.0`).
 
 ## 20. Checklists
 
 **Pre-app#1:** pagination pattern design · image strategy confirmation per app.
-**Pre-1.0:** public API & versioning/deprecation policy · DocC catalog consideration · broad test coverage + `PalTestSupport`. *(LICENSE chosen: MIT.)*
+**Resolved at `v1.0.0`:** versioning/deprecation policy defined (§19) · public API freeze review done (clean) · `diagnose-api-breaking-changes` CI gate active. **Post-1.0 backlog (all additive):** DocC catalog · broad test coverage + `PalTestSupport` (Phase 11) · a networked second test app. *(LICENSE: MIT.)*
 
-## 21. Implementation status & deviations log
+## 21. PalNotifications (push + local)
+
+- **Scope v1:** typed permission (status/options) · local scheduling — `.immediate` (the fire-now, action-triggered client-side notification) / `.after(Duration)` / `.at(DateComponents, repeats:)` · APNs registration plumbing (token/failure as events; provider SDKs stay app-side, same seam philosophy as Analytics) · tap-response routing · foreground presentation policy · category/action registration · badge.
+- **DAG edge → Core only**; imports the system `UserNotifications` framework (zero *external* dependencies holds). Callers never import UserNotifications for the basics — statuses/options/presentation are Pal's own `Sendable` types.
+- **`NotificationService` is constructor-injected, no singleton.** Creating it claims the `UNUserNotificationCenterDelegate` seat — create it before launch finishes (a composition-root property), so cold-start taps are captured.
+- **Streams follow the broadcast rule:** `responses` / `pushEvents` return an independent subscription per access (the DebugKit `environmentChanges` lesson, baked in from day one). Responses arriving before the first subscriber **buffer and replay** (cold-start tap → route); the **latest push event replays** to late subscribers (a token is state).
+- **UIKit containment:** only `registerForRemoteNotifications()` touches UIKit (`#if canImport(UIKit)`, extension-unavailable); APNs callbacks arrive via the app's ~5-line `UIApplicationDelegateAdaptor` forwarding into `handleDeviceToken(_:)` / `handleRegistrationFailure(_:)`.
+- **Testing seam:** an internal backend protocol wraps `UNUserNotificationCenter` (which needs an app host); the machinery is spy-tested in the package; the delegate-callback path (`UNNotification*` types are not constructible) is dogfooded in the Example.
+- **`userInfo` crosses as `[String: String]`** (strings + stringified numbers) — deep-link keys and entity ids; complex payload handling stays app-side.
+- **Guidance-only, deliberately outside v1:** Notification Service/Content Extensions (rich push — app targets, can't usefully ship from SPM); time-sensitive/critical interruption levels are additive later.
+
+## 22. Implementation status & deviations log
 
 Phase-by-phase status and the audit trail of approved deviations from this design are contributor-facing, not part of the design reference — they live in **[CONTRIBUTING](../CONTRIBUTING.md)**.
 

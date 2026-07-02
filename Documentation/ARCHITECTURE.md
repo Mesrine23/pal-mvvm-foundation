@@ -28,7 +28,7 @@ PalPersistence   PalNetworking   PalPresentation   PalNavigation
         ▲             ▲               ▲                (no deps)
         └── PalAuth ──┘               │
                                 PalDesignSystem
-PalAnalytics · PalFeatureFlags (→ Core)
+PalAnalytics · PalFeatureFlags · PalNotifications (→ Core)
 PalDebugKit (→ Core, Networking, Persistence)
 ```
 
@@ -43,6 +43,7 @@ PalDebugKit (→ Core, Networking, Persistence)
 | `PalDesignSystem` | Opt-in Theme (system default), `.textStyle`, ErrorView/SectionErrorView/EmptyStateView/LoadingView, `.appAlert`, SwiftUI utilities, en+el catalogs |
 | `PalAnalytics` / `PalFeatureFlags` | Provider-agnostic seams + NoOp/Console/Composite/InMemory impls |
 | `PalDebugKit` | Shake debug menu (overlay window): network Logs, API environment switcher, Mocks — runtime-enabled, gated app-side by the `DEBUGKIT` flag |
+| `PalNotifications` | `NotificationService`: permission, local scheduling (immediate/delayed/calendar), APNs token plumbing, tap-response + push-event streams, foreground policy, categories |
 
 Each product has a usage guide in [Documentation/Products/](Products/).
 
@@ -124,13 +125,19 @@ final class AppContainer {
 
 **Failure channels** — LOAD failures drive `ViewState.failed` (full error screen or banner over stale data); ACTION failures (screen keeps its data) drive `.appAlert`.
 
+**Delegation (child → owner)** — when a child reports back to the owner that presents it (navigation, flow completion), use a `‹Context›Delegate`: `@MainActor protocol …: AnyObject`, held **weak**, intent-named methods (`showUserDetail(_:)`, `checkoutDidFinish(_:)`). Prefer it over passing closures or `Binding`s upward. Use a **closure** for a single one-shot callback, and an **`AsyncStream`** for broadcast events (why `AuthEvent.loggedOut` is a stream, not a delegate).
+
 **Modals (hybrid)** — screen-local UI modals (pickers/filters; need Bindings into the presenting VM) stay view-level; multi-screen flow modals (checkout/onboarding/auth-expired) go through `router.present(_:)` with a nested `RouterView`. Presentations are Identifiable items, never booleans.
 
 **Deep links** — `DeepLinkHandler` maps URL → routes + strategy; `.append` protects in-progress user state, `.replace` resets. The push-launch flow is just "set the path".
 
+**Notifications** — one `NotificationService` at the composition root; creating it claims the delegate seat, so cold-start taps are captured (buffered until `responses` is first observed). Taps become routes at the root: `userInfo` carries an **id**, the coordinator re-fetches and pushes. APNs tokens arrive via a ~5-line app-side `UIApplicationDelegateAdaptor` forwarding into the service; provider SDKs stay app-side.
+
 **Pull-to-refresh** — drive it from `Loader.refresh(_:)` (reloads in place — no `.loading` transition, since the refresh control is the indicator), not `performLoad`. And keep the scrollable (`List`) mounted: render empty/error as **overlays** rather than `switch`-ing the `List` out for an `EmptyStateView`/`ErrorView`. Flipping `.loading` or swapping the scrollable while `.refreshable` is still spinning fights the refresh control ("change the refresh control while it is not idle") and drops the first update. The initial-load `LoadingView` swap is fine (no refresh control yet).
 
 **Caching** — repository-level cache-aside via `MemoryCache` (`forceRefresh:` bypass, per-key TTL, passive expiry, `clear()` on logout). Never HTTP-level.
+
+**Local mutation (re-fetch after write)** — a local store has no `@Query`, so after a `create`/`update`/`delete` through the repository, **re-fetch** to reflect the change (the coordinator calls the list VM's `refresh()` on return). One source of truth, read path unchanged. See *Local persistence* under [Adopting Pal](#adopting-pal-in-an-existing-app).
 
 **Auth refresh** — `AuthInterceptor` injects the Bearer token and, on 401, awaits `TokenProvider.refresh()` (single-flight actor: N concurrent 401s → one refresh) and retries once. `AuthEvent.loggedOut` streams to the root coordinator → present login flow.
 
@@ -139,9 +146,10 @@ final class AppContainer {
 ## Adopting Pal in an existing app
 
 - **Repositories back onto any source — not just the network.** The repository is the only layer that touches storage; back it with `UserDefaultsService` / SwiftData / Core Data / a bundled file / in-memory. For a synchronous, non-failing local source the `ViewState` `loading`/`failed` cases are largely vestigial — still use a `Loader` for uniformity (its `load { }` closure is `async throws`, so wrap a sync call as `load { store.get(...) }`), or skip the loader and hold the value directly when a screen truly can't load or fail.
-- **Multi-target apps link Pal per target.** A Pal product linked to the *app* target is **not** visible to separate framework targets (`Domain.xcodeproj`, `Data.xcodeproj`, …). Each framework that imports a Pal product must link it directly — e.g. the Data framework links `PalPersistence`. (Domain links nothing — it stays pure Swift.)
+- **Local relational stores (SwiftData/Core Data) live app-side, behind repositories.** Pal ships no persistence-framework dependency (zero-deps), but the pattern that fits Swift 6 cleanly is: make the repository a **`@ModelActor`** — it is `Sendable`, owns its `ModelContext` off the main actor, and is built from the `Sendable` `ModelContainer`, so it drops into a nonisolated DI closure and its `async` methods satisfy a `Sendable` repo protocol and feed `Loader`'s `@Sendable` operation with no isolation friction. **Map `@Model` reference types → pure `Sendable` domain structs inside the actor**, so only value types cross back to the `@MainActor` ViewModel. There is no `@Query` by design — after a write, re-fetch through the repository (see *Local mutation* above). For instant, non-failing local reads the `Loader` `.loading`/`.failed` cases are largely vestigial — keep `Loader` for uniformity, or hold the value directly (first bullet).
+- **Modularize app layers as local SPM packages (recommended) — or framework targets.** The cleanest way to enforce the layer DAG is to put Domain/Data in **local Swift packages** (one package with library products, or one package per layer), exactly how Pal itself ships — Presentation/app then physically *cannot* import a `@Model` or a repository impl, turning the dependency rule into a **compile-time** guarantee. SPM library targets also default to **`nonisolated`** isolation, precisely what the Swift-6 note below prescribes for Domain/Data (a single app target instead forces them to the app's `MainActor` default — the opposite). Gotchas on this path: types crossing a package boundary need `public` (+ public inits) — encapsulate persistence behind a public facade + domain protocols, keep `@Model`s `internal`; **watch name collisions** once a module imports SwiftData (a module named `Data` clashes with `Foundation.Data`; a `Category` type clashes with the ObjC runtime — use `RecipesData` / `RecipeCategory`); add a `.macOS` floor so `swift build`/tests run on the host. The older approach — separate framework **`.xcodeproj`** targets — also works: a Pal product linked to the *app* target is **not** visible to a framework target, so each framework links the Pal products it imports directly (Domain links nothing — it stays pure Swift).
 - **Existential domains can't be route payloads.** `Routable` requires `Hashable & Sendable`, so an `any SomeProtocol` existential can't ride a route. Model the domain as a concrete (sum) type, **or** carry an ID in the route and re-fetch in the destination (also the state-restoration-friendly variant).
-- **Swift 6 / Xcode 26 actor isolation.** Set Domain/Data targets to `nonisolated` default isolation and the app/Presentation target to `MainActor` (`SWIFT_DEFAULT_ACTOR_ISOLATION`). Otherwise entity/content types silently become main-actor-isolated and can't be constructed off-actor inside `Loader`'s `@Sendable` operation ("main actor-isolated … cannot be called from outside the actor"). Entity/content types must be `Sendable`.
+- **Swift 6 / Xcode 26 actor isolation.** Set Domain/Data targets to `nonisolated` default isolation and the app/Presentation target to `MainActor` (`SWIFT_DEFAULT_ACTOR_ISOLATION`). Otherwise entity/content types silently become main-actor-isolated and can't be constructed off-actor inside `Loader`'s `@Sendable` operation ("main actor-isolated … cannot be called from outside the actor"). Entity/content types must be `Sendable`. Under that `MainActor` default, **pure constants/utilities consumed by nonisolated code must be marked `nonisolated`** — e.g. a design-token constant used as a default argument inside a custom `Layout`, or a `Sendable` helper called off-actor — or they inherit `MainActor` and become unreachable from the nonisolated context.
 
 ## Workflows
 

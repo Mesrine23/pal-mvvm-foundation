@@ -7,7 +7,7 @@
 ## What it gives you
 
 - **`AnalyticsTracker`** — `track(_:)`, `identify(userID:)`, `setUserProperty(_:for:)`, `reset()`.
-- **`AnalyticsEvent`** — `name` + `[String: AnalyticsValue]`; apps define events as static factories.
+- **`AnalyticsEvent`** — `name` + `[String: AnalyticsValue]`; apps define events as static factories. Initializer: `AnalyticsEvent(name: String, parameters: [String: AnalyticsValue] = [:])`.
 - **`AnalyticsValue`** — `.string` / `.int` / `.double` / `.bool` (literal-expressible).
 - **Shipped impls** — `NoOpAnalyticsTracker` (default), `ConsoleAnalyticsTracker` (via LoggerFactory), `CompositeAnalyticsTracker` (fan-out to N providers).
 

@@ -8,7 +8,7 @@
 
 - **`KeychainService`** — throwing, typed Keychain access for secrets.
 - **`UserDefaultsService`** — plist-native key/value storage.
-- **Typed keys** — `KeychainKey<Value>` / `DefaultsKey<Value>` / `CacheKey<Value>`: the value type travels with the key, so reads and writes are compile-time checked.
+- **Typed keys** — `KeychainKey<Value>` / `DefaultsKey<Value>` / `CacheKey<Value>`: the value type travels with the key, so reads and writes are compile-time checked. Initializers: `DefaultsKey(_ name: String, default: Value? = nil)` · `KeychainKey(service: String, account: String, accessibility: KeychainAccessibility = .afterFirstUnlock)` · `CacheKey(_ name: String, ttl: Duration)`.
 - **`MemoryCache`** — an actor with passive per-key TTL; **memory-only by policy** (nothing survives an app launch).
 
 All three stores share the same verbs: **`get` / `set` / `delete`** (Keychain also `throws`; the one justified asymmetry — Keychain genuinely fails).
@@ -70,5 +70,6 @@ func getUsers(forceRefresh: Bool = false) async throws -> [User] {
 - `KeychainKey` sets `kSecAttrAccessible` explicitly (default `.afterFirstUnlock`, configurable via `KeychainAccessibility`).
 - `KeychainError` distinguishes not-found (returns `nil`) from `encodingFailed` / `decodingFailed` / `unexpectedStatus(OSStatus)`.
 - Ships `PrivacyInfo.xcprivacy` (UserDefaults required-reason API) for App Store compliance.
+- **Local relational data (SwiftData/Core Data)** is *not* part of PalPersistence — it stays zero-dependency. Model it app-side behind a repository; see the SwiftData adoption note in [Architecture](../ARCHITECTURE.md#adopting-pal-in-an-existing-app).
 
 See also: [PalAuth](PalAuth.md) (token-store glue) · [Getting Started](../GettingStarted.md)

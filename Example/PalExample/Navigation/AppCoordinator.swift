@@ -1,5 +1,8 @@
+import os
 import SwiftUI
+import PalCore
 import PalNavigation
+import PalNotifications
 
 /// Owns the users-tab ``Router`` and turns screen navigation intents into pushes;
 /// also the destination factory (one exhaustive switch over ``AppRoute``).
@@ -10,6 +13,7 @@ final class AppCoordinator: UsersListNavigationDelegate {
     let router = Router<AppRoute>()
 
     private let container: AppContainer
+    private let logger = LoggerFactory.make(category: "Navigation")
 
     /// Creates the coordinator.
     /// - Parameter container: The composition root that builds ViewModels.
@@ -21,6 +25,23 @@ final class AppCoordinator: UsersListNavigationDelegate {
 
     func showUserDetail(_ user: User) {
         router.push(.userDetail(user))
+    }
+
+    // MARK: - Notification deep link
+
+    /// Routes a notification tap: `userInfo` carries a `userID`, we re-fetch the
+    /// user (the ID-on-route variant) and push their detail.
+    func handleNotification(_ response: NotificationResponse) {
+        guard let idText = response.userInfo["userID"], let id = Int(idText) else { return }
+        Task {
+            do {
+                guard let user = try await container.user(withID: id) else { return }
+                router.popToRoot()
+                router.push(.userDetail(user))
+            } catch {
+                logger.error("Notification deep link failed: \(error)")
+            }
+        }
     }
 
     // MARK: - Destination factory
