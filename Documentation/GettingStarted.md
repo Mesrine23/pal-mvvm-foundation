@@ -189,7 +189,7 @@ final class DashboardViewModel {
 
 ## 5. Navigation
 
-Define a typed route, render with `RouterView`, and let the ViewModel delegate intents (see [PalNavigation](Products/PalNavigation.md)):
+Define a typed route, render with `RouterView`, and let the ViewModel delegate intents. The full per-feature shape — route enum + coordinator + destination factory — is the **coordinator triangle** in [PalNavigation](Products/PalNavigation.md):
 
 ```swift
 import PalNavigation

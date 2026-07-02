@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Kind</key>
+	<string>Xcode.IDEKit.TextSubstitutionFileTemplateKind</string>
+	<key>Summary</key>
+	<string>A feature coordinator: Router + delegate one-liners + destination factory</string>
+	<key>Description</key>
+	<string>Creates a ‹Feature›Coordinator owning a typed Router, implementing the screens' NavigationDelegates as one-liners, and doubling as the destination factory (exhaustive view(for:) switch). Name the file after the feature, e.g. UsersCoordinator. Split the factory into a ‹Feature›DestinationFactory when it grows — see PalNavigation's coordinator triangle.</string>
+	<key>SortOrder</key>
+	<string>3</string>
+	<key>AllowedTypes</key>
+	<array>
+		<string>public.swift-source</string>
+	</array>
+	<key>MainTemplateFile</key>
+	<string>___FILEBASENAME___.swift</string>
+	<key>Platforms</key>
+	<array>
+		<string>com.apple.platform.iphoneos</string>
+	</array>
+</dict>
+</plist>
