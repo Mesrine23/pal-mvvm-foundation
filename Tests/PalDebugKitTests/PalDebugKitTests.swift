@@ -87,6 +87,18 @@ import PalPersistence
     }
 }
 
+@Test func disablingGlobalMockingUnmocksEveryRecord() async throws {
+    let registry = try makeRegistry()
+    await registry.setGlobalEnabled(true)
+    await registry.upsert(MockRecord(method: "GET", path: "/users", isEnabled: true, statusCode: 200, body: Data()))
+    await registry.upsert(MockRecord(method: "POST", path: "/orders", isEnabled: true, statusCode: 201, body: Data()))
+
+    await registry.setGlobalEnabled(false)
+
+    #expect(await registry.all.allSatisfy { !$0.isEnabled })
+    #expect(await registry.enabledKeys().isEmpty)
+}
+
 @Test func mockIsBypassedWhenGloballyDisabled() async throws {
     let registry = try makeRegistry()
     await registry.setGlobalEnabled(false)
@@ -123,11 +135,61 @@ import PalPersistence
     let staging = APIEnvironment(name: "Staging", baseURL: try #require(URL(string: "https://staging.example.com")))
     store.register([prod, staging], for: .default)
 
-    var iterator = store.changes.makeAsyncIterator()
+    var iterator = store.changes().makeAsyncIterator()
     store.select(staging, for: .default)
     let change = await iterator.next()
     #expect(change?.environment == staging)
     #expect(change?.clientID == .default)
+}
+
+@Test @MainActor func environmentChangesReachEverySubscriberIndependently() async throws {
+    let store = EnvironmentStore(defaults: try makeDefaults())
+    let prod = APIEnvironment(name: "Prod", baseURL: try #require(URL(string: "https://prod.example.com")))
+    let staging = APIEnvironment(name: "Staging", baseURL: try #require(URL(string: "https://staging.example.com")))
+    store.register([prod, staging], for: .default)
+
+    let first = store.changes()
+    let second = store.changes()
+    store.select(staging, for: .default)
+
+    var firstIterator = first.makeAsyncIterator()
+    var secondIterator = second.makeAsyncIterator()
+    #expect(await firstIterator.next()?.environment == staging)
+    #expect(await secondIterator.next()?.environment == staging)
+}
+
+@Test @MainActor func reselectingTheActiveEnvironmentDoesNotBroadcast() async throws {
+    let store = EnvironmentStore(defaults: try makeDefaults())
+    let prod = APIEnvironment(name: "Prod", baseURL: try #require(URL(string: "https://prod.example.com")))
+    let staging = APIEnvironment(name: "Staging", baseURL: try #require(URL(string: "https://staging.example.com")))
+    store.register([prod, staging], for: .default)
+
+    var iterator = store.changes().makeAsyncIterator()
+    store.select(prod, for: .default)      // already active (seeded by register) → no event
+    store.select(staging, for: .default)   // real switch → the FIRST event observed
+
+    #expect(await iterator.next()?.environment == staging)
+}
+
+@Test @MainActor func removingTheActiveCustomEnvironmentBroadcastsTheFallback() async throws {
+    let store = EnvironmentStore(defaults: try makeDefaults())
+    let prod = APIEnvironment(name: "Prod", baseURL: try #require(URL(string: "https://prod.example.com")))
+    let local = APIEnvironment(name: "Local", baseURL: try #require(URL(string: "http://localhost:8080")), isCustom: true)
+    store.register([prod], for: .default)
+    store.addCustom(local, for: .default)
+    store.select(local, for: .default)
+
+    var iterator = store.changes().makeAsyncIterator()
+    store.removeCustom(local, for: .default)
+
+    #expect(store.selected[.default] == prod)
+    #expect(await iterator.next()?.environment == prod)
+}
+
+@Test @MainActor func resolverFallsBackBeforeAnySelection() throws {
+    let fallback = try #require(URL(string: "https://fallback.example.com"))
+    let resolved = EnvironmentResolver.baseURL(for: .default, default: fallback, defaults: try makeDefaults())
+    #expect(resolved == fallback)
 }
 
 // MARK: - Helpers

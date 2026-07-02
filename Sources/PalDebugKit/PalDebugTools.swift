@@ -45,7 +45,9 @@ public final class PalDebugTools {
     public var mockInterceptor: any Interceptor { MockInterceptor(registry: mockRegistry) }
 
     /// Emits whenever the active environment changes; observe it to run your reset.
-    public var environmentChanges: AsyncStream<EnvironmentChanged> { environmentStore.changes }
+    /// Each access returns an **independent subscription** — safe to observe from
+    /// several tasks, and safe to resubscribe after an observing task was cancelled.
+    public var environmentChanges: AsyncStream<EnvironmentChanged> { environmentStore.changes() }
 
     #if canImport(UIKit)
     private let window = DebugWindow()
