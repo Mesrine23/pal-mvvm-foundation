@@ -16,3 +16,19 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
+
+  api-stability:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Diff public API against the latest release tag
+        run: |
+          BASELINE=$(git tag --list 'v*' --sort=-v:refname | head -1)
+          if [ -z "$BASELINE" ]; then
+            echo "No release tag found — skipping API diff."
+            exit 0
+          fi
+          echo "Baseline: $BASELINE"
+          swift package diagnose-api-breaking-changes "$BASELINE"

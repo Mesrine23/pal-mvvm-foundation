@@ -9,12 +9,12 @@
 
 ## 1. Add the package
 
-In Xcode: **File ▸ Add Package Dependencies…**, enter the repository URL, and pin to a version (or `main` for early apps). Or in your own `Package.swift`:
+In Xcode: **File ▸ Add Package Dependencies…**, enter the repository URL, and pin to a version. Or in your own `Package.swift`:
 
 ```swift
 dependencies: [
-    // Pre-1.0, pin to the minor: a 0.x minor bump may break. Track tags, never a branch.
-    .package(url: "https://github.com/Mesrine23/pal-mvvm-foundation.git", .upToNextMinor(from: "0.13.0")),
+    // SemVer since 1.0.0: minors and patches never break. Track tags, never a branch.
+    .package(url: "https://github.com/Mesrine23/pal-mvvm-foundation.git", from: "1.0.0"),
 ],
 targets: [
     .target(name: "App", dependencies: [
@@ -227,7 +227,7 @@ You'll inevitably hit a gap in the foundation while building a real app. Here's 
 
 ### Option B — Versioned release, then bump the pin — for a discrete change
 
-Make the change in the foundation repo on its own → `swift test` → **commit + push + tag** (e.g. `v0.13.0`) → in the app, *File ▸ Packages ▸ Update to Latest Package Versions* (or raise the version requirement) → commit the app's updated `Package.resolved`.
+Make the change in the foundation repo on its own → `swift test` → **commit + push + tag** (e.g. `v1.1.0`) → in the app, *File ▸ Packages ▸ Update to Latest Package Versions* (or raise the version requirement) → commit the app's updated `Package.resolved`.
 
 ### Option C — Track a branch/commit — for an early-stage app
 
@@ -241,7 +241,7 @@ App pins a **version** → hit a gap → add the **local override** and edit liv
 
 - **Remove the local override before you ship or push the app** — otherwise it builds against a local path that doesn't exist on CI or another machine.
 - **Commit `Package.resolved`** so app builds are reproducible.
-- **SemVer is the contract:** pre-1.0 a breaking change bumps *minor* (`0.12 → 0.13`), so **pin `.upToNextMinor(from:)`** to opt into each minor deliberately; after 1.0, breaking = *major* and `from:` is safe. **Track tags, never a branch** (a branch pin chases a moving commit with no contract).
+- **SemVer is the contract:** since `1.0.0`, a breaking change ships only in a *major* — deprecations first — so **`from:` is safe**; minors and patches never break you (CI enforces it with an API-stability gate). **Track tags, never a branch** (a branch pin chases a moving commit with no contract).
 - **One direction only:** changes flow *into* the foundation repo and *out* to apps via versions — never edit two divergent copies.
 
 ## Where to go next
