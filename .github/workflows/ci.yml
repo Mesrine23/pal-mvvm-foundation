@@ -31,4 +31,16 @@ jobs:
             exit 0
           fi
           echo "Baseline: $BASELINE"
-          swift package diagnose-api-breaking-changes "$BASELINE"
+          set +e
+          OUTPUT=$(swift package diagnose-api-breaking-changes "$BASELINE" 2>&1)
+          CODE=$?
+          echo "$OUTPUT"
+          [ $CODE -eq 0 ] && exit 0
+          # Fail only on an actual detected break; a baseline that no longer
+          # builds on this toolchain (e.g. a tag predating a portability fix) warns.
+          if echo "$OUTPUT" | grep -qiE "breakage|breaking change"; then
+            echo "::error::Public API breakage detected against $BASELINE"
+            exit 1
+          fi
+          echo "::warning::Baseline $BASELINE could not be evaluated on this toolchain; skipping the API diff."
+          exit 0

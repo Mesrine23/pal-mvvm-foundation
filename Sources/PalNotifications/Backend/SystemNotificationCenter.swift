@@ -1,4 +1,9 @@
-import UserNotifications
+// `@preconcurrency`: on SDKs where `UserNotifications` isn't concurrency-audited
+// (Xcode 16 / macOS 15 SDK), `UNNotificationSettings` / `[UNNotificationRequest]`
+// are non-Sendable, so awaiting them across this `@MainActor` boundary is an error;
+// newer SDKs annotate the framework and it's a no-op there. This keeps the package
+// building across the Xcode 16 ↔ 26 range.
+@preconcurrency import UserNotifications
 
 /// The runtime backend: thin pass-throughs to `UNUserNotificationCenter.current()`.
 /// Instantiated only by ``NotificationService``'s public initializer — package
