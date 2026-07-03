@@ -125,7 +125,8 @@ Rules:
 - **LoggingInterceptor redaction (mandatory):** auth headers always redacted; bodies `.debug` only; `privacy: .private` for dynamics.
 - **RetryInterceptor:** capped retries, exponential backoff, `error.isRetriable`, respects cancellation.
 - **Auth refresh:** `actor TokenProvider` — single-flight via in-flight `Task` (check-and-set with no `await` between): N concurrent 401s → exactly 1 refresh. Protocols: `TokenStore` (foundation provides Keychain impl via PalAuth) · `TokenRefreshService` (**app-provided** — knows the refresh endpoint/DTOs). Logout signal: `AsyncStream<AuthEvent>` (`refreshed`, `loggedOut`) observed by the root coordinator. Refresh timing: reactive (401-driven) only. The refresh request sets `requiresAuth=false` (skips AuthInterceptor; no recursion).
-- **Upload:** `HTTPBody.multipart(parts)` + file upload via URLSession upload task. Deferred: reachability, streaming download-to-disk.
+- **Upload:** `HTTPBody.multipart(parts)` + file upload via URLSession upload task. Deferred: streaming download-to-disk.
+- **Reachability (`v1.3.0`, additive):** `ReachabilityMonitor` (`@MainActor @Observable`, one per app at the composition root) over an internal `NWPathMonitor` seam (spy-tested). `NetworkStatus { isOnline, isExpensive, isConstrained }`; starts optimistically online (no offline flash at launch); `statusUpdates` follows the broadcast rule (independent subscription per access, replays current, dedupes). **For UX affordances only — never a request preflight gate** (attempt the request; failures surface through the normal error path).
 
 ## 11. PalAuth
 
