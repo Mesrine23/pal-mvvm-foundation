@@ -18,6 +18,8 @@ swift test         # smoke + targeted tests
 
 Every change must leave `swift build` + `swift test` green and the Example app compiling. CI enforces this on push/PR.
 
+**CI runs an OLDER toolchain than local dev** (`macos-15` = Xcode 16 / Swift 6.1). Newer SDKs concurrency-annotate system frameworks, so local green can hide strict-concurrency errors that CI (and consumers on Xcode 16) hit — after touching any system-framework wrapper, check CI (`gh run list`); the fix pattern is `@preconcurrency import <Framework>` (see the `v1.3.1` deviations entry).
+
 ## Package dependency DAG (enforced — never add edges)
 
 `PalCore→∅` · `PalPersistence→Core` · `PalNetworking→Core` · `PalAuth→Core,Networking,Persistence` · `PalPresentation→Core` · `PalNavigation→∅` · `PalDesignSystem→Core,Presentation` · `PalAnalytics→Core` · `PalFeatureFlags→Core` · `PalDebugKit→Core,Networking,Persistence` (not DesignSystem) · `PalNotifications→Core` · `PalWeb→Core,Presentation`.
@@ -52,7 +54,7 @@ Every target declares ALL modules it directly imports (no transitive reliance). 
 
 ## The canonical per-screen pattern
 
-Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Value>` (each drives a `ViewState`: `idle / loading(previous:) / loaded / failed(error, previous:)`); call `loader.load { }` (auto-cancels the previous in-flight load, swallows cancellation, maps to `PresentableError`); the View switches on `viewModel.‹loader›.state`. Navigation goes through the screen's `NavigationDelegate`, implemented by the feature coordinator as one-liners over the typed `Router`. Dependencies arrive via `init` (constructor injection from the app-side factory). Load failures → `ViewState`; action failures → `.appAlert`.
+Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Value>` (each drives a `ViewState`: `idle / loading(previous:) / loaded / failed(error, previous:)`); call `loader.load { }` (auto-cancels the previous in-flight load, swallows cancellation, maps to `PresentableError`); the View switches on `viewModel.‹loader›.state`. Navigation goes through the screen's `NavigationDelegate`, implemented by the feature coordinator as one-liners over the typed `Router`. Dependencies arrive via `init` (constructor injection from the app-side factory). Load failures → `ViewState`; action failures → `.appAlert`; action confirmations → `.appToast`.
 
 ## Patterns & evolution (binding)
 
