@@ -70,6 +70,20 @@ Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-cha
 
 > **`v1.0.0` shipped** (2026-07-02): all 11 products, dogfooded by two apps (the networked Example + a local-only SwiftData app), API review clean, additive-only evolution tool-verified from `v0.13.0`. The public API is now under the compatibility policy above, enforced by the `api-stability` CI gate.
 
+### Post-1.0 additions (approved roadmap — all additive)
+
+| Addition | Product | Status | Ships in |
+|---|---|---|---|
+| Shimmer + skeleton (`.shimmering` / `.skeleton`) | PalDesignSystem | ✅ | `v1.1.0` |
+| ScrollView utilities (`.onReachedBottom`, offset tracking) | PalDesignSystem | — | `v1.1.0` |
+| `PagedLoader` + pagination pattern docs (owner's last-row `onAppear` trigger is the documented primary) | PalPresentation | — | `v1.1.0` |
+| Toast (non-blocking ACTION channel) | PalDesignSystem | — | `v1.1.0` |
+| `PalWeb` — WebScreen + navigation policy seam + external-link opener | new product | — | `v1.2.0` |
+| Reachability (`NWPathMonitor` seam) | PalNetworking | — | `v1.3.0` |
+| `BiometricAuthenticator` | PalAuth | — | `v1.3.0` |
+
+Parked (owner hold / no verdict): keyboard utilities beyond `hideKeyboard()` · PalTestSupport + broad tests (Phase 11) · DocC · a networked second test app. Declined for now: DebugKit round 2 (flags tab, log export, per-client custom envs).
+
 ## Deviations log
 
 The audit trail of approved exceptions where implementation reality met the design.
