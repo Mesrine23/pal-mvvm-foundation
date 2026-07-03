@@ -66,7 +66,7 @@ Each phase ends GREEN: `swift build` + `swift test` pass and the Example app com
 | 11 (deferred) | Broad tests + PalTestSupport · reachability · streaming download-to-disk | — | — |
 | 12 | PalNotifications — NotificationService · permission · local scheduling (immediate/delayed/calendar) · APNs token plumbing · response routing · foreground policy · categories | ✅ | `v1.0.0` |
 
-Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-chain + Router + Loader (incl. `refresh`) + DebugKit (log ring buffer, inspector capture, mock interceptor 2xx/non-2xx + global-off un-mocks-all, env store broadcast/re-select/removal-fallback, resolver fallback) + Notifications (content/trigger/options/status/category mapping via a spy backend, response broadcast + cold-start buffering, push events + latest-replay). The Example app builds for the iOS Simulator (0 warnings), dogfooding **all 11 products** (DebugKit wired behind `DEBUGKIT`).
+Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-chain + Router + Loader (incl. `refresh`) + DebugKit (log ring buffer, inspector capture, mock interceptor 2xx/non-2xx + global-off un-mocks-all, env store broadcast/re-select/removal-fallback, resolver fallback) + Notifications (content/trigger/options/status/category mapping via a spy backend, response broadcast + cold-start buffering, push events + latest-replay) + DesignSystem snippet compile-guards (scroll observation, shimmer/skeleton). The Example app builds for the iOS Simulator (0 warnings), dogfooding **all 11 products** (DebugKit wired behind `DEBUGKIT`).
 
 > **`v1.0.0` shipped** (2026-07-02): all 11 products, dogfooded by two apps (the networked Example + a local-only SwiftData app), API review clean, additive-only evolution tool-verified from `v0.13.0`. The public API is now under the compatibility policy above, enforced by the `api-stability` CI gate.
 
@@ -75,7 +75,7 @@ Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-cha
 | Addition | Product | Status | Ships in |
 |---|---|---|---|
 | Shimmer + skeleton (`.shimmering` / `.skeleton`) | PalDesignSystem | ✅ | `v1.1.0` |
-| ScrollView utilities (`.onReachedBottom`, offset tracking) | PalDesignSystem | — | `v1.1.0` |
+| Scroll observation (`.scrollObservationTarget` + `.onScrollOffsetChange` / `.onReachedBottom`) | PalDesignSystem | ✅ | `v1.1.0` |
 | `PagedLoader` + pagination pattern docs (owner's last-row `onAppear` trigger is the documented primary) | PalPresentation | — | `v1.1.0` |
 | Toast (non-blocking ACTION channel) | PalDesignSystem | — | `v1.1.0` |
 | `PalWeb` — WebScreen + navigation policy seam + external-link opener | new product | — | `v1.2.0` |
