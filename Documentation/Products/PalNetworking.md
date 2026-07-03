@@ -92,12 +92,31 @@ struct HeaderInterceptor: Interceptor {
 }
 ```
 
+## Reachability
+
+Observe the network condition for **UX affordances** — an offline banner, deferring heavy work on expensive paths. Create one `ReachabilityMonitor` at the composition root and inject it:
+
+```swift
+let reachability = ReachabilityMonitor()
+
+// SwiftUI reads the observable status directly:
+if !reachability.status.isOnline { OfflineBanner() }
+
+// Or react to changes (independent subscription per access; yields the
+// current status immediately, then every change — duplicates filtered):
+for await status in reachability.statusUpdates { … }
+```
+
+`NetworkStatus` carries `isOnline` / `isExpensive` (cellular, hotspot) / `isConstrained` (Low Data Mode). It starts **optimistically online** until the first path update lands, so offline UI never flashes at launch.
+
+**Not a request gate:** attempt requests regardless and let failures surface through the normal error path — preflighting reachability races reality.
+
 ## Notes
 
 - Interceptors are **HTTP-level** (raw bytes); typed decoding happens in `send` after the chain.
 - The chain currency is `TransportRequest { urlRequest, options }` so per-request flags (`requiresAuth`, custom `flags`) reach interceptors.
 - `LoggingInterceptor` redacts auth headers always; logs bodies only at `.debug`; uses `privacy: .private` for dynamics.
 - `EmptyResponse` accepts empty bodies; `Data`/`String` responses skip JSON decoding (files/PDFs).
-- The `baseURLProvider` init (per-request base URL, for environment switching) lands with [PalDebugKit](PalDebugKit.md).
+- The `baseURLProvider` init resolves the base URL per request — the seam behind [PalDebugKit](PalDebugKit.md)'s environment switcher.
 
 See also: [Architecture](../ARCHITECTURE.md) · [PalAuth](PalAuth.md)
