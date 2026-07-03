@@ -64,6 +64,7 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .appAlert($viewModel.alert)
+        .appToast($viewModel.toast)
         .task { await viewModel.onAppear() }
         .task { await viewModel.observePushEvents() }
     }

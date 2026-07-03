@@ -20,4 +20,14 @@ struct DesignSystemSnippetTests {
         _ = Text("placeholder").shimmering(active: true)
         _ = Text("row").skeleton(when: true)
     }
+
+    @Test("Toast snippet compiles and carries its defaults")
+    func toastSnippetCompiles() {
+        let binding = Binding<AppToast?>(get: { nil }, set: { _ in })
+        _ = Text("screen").appToast(binding)
+
+        let toast = AppToast(kind: .success, title: "Saved")
+        #expect(toast.duration == .seconds(3))
+        #expect(toast.message == nil)
+    }
 }

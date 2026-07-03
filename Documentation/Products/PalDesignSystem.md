@@ -10,6 +10,7 @@
 - **`.textStyle(_:)`** — apply a `TextStyleToken` from the theme (sugar, never a gate; raw SwiftUI styling always available).
 - **State components** — `ErrorView`, `SectionErrorView`, `EmptyStateView`, `LoadingView`.
 - **`.appAlert(...)`** — themed alert chrome driven by an `AppAlert` value (+ a custom-content overload).
+- **`.appToast(...)`** — transient, non-blocking confirmations driven by an `AppToast` value (auto-dismiss, swipe to dismiss).
 - **Skeleton loading** — `.skeleton(when:)` and `.shimmering(active:)` for the first-load placeholder state.
 - **Scroll observation** — `.onScrollOffsetChange(perform:)` and `.onReachedBottom(threshold:perform:)` over a `.scrollObservationTarget()` content marker.
 - **Utilities** — `hideKeyboard()`, `onFirstAppear { }`, `.shadow(_ token:)`.
@@ -114,6 +115,25 @@ alert = .error(presentableError)
 Declare case-specific alerts as static factories on `AppAlert`. For bespoke content, use the overload `.appAlert($item) { item in CustomContent(item) }` — the foundation owns the chrome (dim, card, animation, dismiss).
 
 **Known limitation:** a root-level overlay does not render above an active `.sheet` — apply `.appAlert` per presentation context.
+
+## Toasts (non-blocking confirmations)
+
+The other half of the ACTION channel: `.appAlert` interrupts for failures that need acknowledgement; a **toast** confirms without stealing focus — "Saved", "Scheduled", "Copied".
+
+```swift
+@State private var toast: AppToast?
+
+someView
+    .appToast($toast)
+
+// AppToast { kind: .info/.success/.warning/.error, title, message?, duration (default 3 s) }
+toast = AppToast(kind: .success, title: String(localized: "Saved"))
+```
+
+- Auto-dismisses after `duration`; swipe down (or the accessibility "Dismiss" action) dismisses early; presenting a new value replaces the current one.
+- Themed by tokens (surface card, semantic tint per `kind`, elevation shadow) — no configuration needed.
+- Declare app toasts as static factories on `AppToast`, like alerts.
+- Same placement caveat as `.appAlert`: apply per presentation context — a root-level overlay does not render above an active `.sheet`.
 
 ## Notes
 
