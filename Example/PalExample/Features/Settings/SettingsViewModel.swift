@@ -35,6 +35,9 @@ final class SettingsViewModel {
     /// The action-failure / confirmation channel.
     var alert: AppAlert?
 
+    /// The non-blocking confirmation channel.
+    var toast: AppToast?
+
     @ObservationIgnored private let tokenStore: KeychainTokenStore
     @ObservationIgnored private let flags: InMemoryFeatureFlagsProvider
     @ObservationIgnored private let analytics: any AnalyticsTracker
@@ -92,6 +95,7 @@ final class SettingsViewModel {
         do {
             try await notifications.schedule(.demoSpotlight)
             analytics.track(.notificationScheduled("demo-spotlight"))
+            toast = AppToast(kind: .success, title: String(localized: "Notification sent"))
         } catch {
             alert = .error(PresentableError(from: error))
         }
@@ -102,6 +106,11 @@ final class SettingsViewModel {
         do {
             try await notifications.schedule(.demoReminder, trigger: .after(.seconds(5)))
             analytics.track(.notificationScheduled("demo-reminder"))
+            toast = AppToast(
+                kind: .success,
+                title: String(localized: "Reminder scheduled"),
+                message: String(localized: "Background the app to see it arrive.")
+            )
         } catch {
             alert = .error(PresentableError(from: error))
         }

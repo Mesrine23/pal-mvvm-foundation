@@ -187,6 +187,40 @@ final class DashboardViewModel {
 - **A loader per section** only when sections load/fail/**refresh independently**. The moment a section reloads on its own, give *that* section its own `Loader` and drop it from the composite (one source of truth); derive "all done on init" as a computed `isInitiallyLoading`, and refresh just that section with `section.refresh { … }` (its `.loading(previous:)` keeps the stale data while it reloads).
 - A spinner for a true **action** (submit/toggle), not a content section, belongs on a separate `Loader<Void>`/flag with errors via `.appAlert` — the ACTION channel, distinct from LOAD.
 
+### Paginated lists
+
+When the list arrives in pages, swap the `Loader` for a **`PagedLoader`** — the accumulated items drive the same `ViewState`, so the screen's `switch` is unchanged. The trigger is **the trailing footer row that sits outside the `ForEach`**, firing when it appears:
+
+```swift
+@MainActor @Observable
+final class PostsViewModel {
+    let posts: PagedLoader<Post, Int>
+    init(fetchPage: any FetchPostsPageUseCaseProtocol) {
+        posts = PagedLoader { page in
+            let current = page ?? 1                              // nil = first page
+            let result = try await fetchPage.execute(page: current)
+            return Page(items: result.posts, nextCursor: result.hasMore ? current + 1 : nil)
+        }
+    }
+    func loadMore() { posts.loadMore() }
+}
+```
+```swift
+List {
+    ForEach(posts) { post in PostRow(post) }     // the rows
+    if viewModel.posts.hasMore {                 // the paging footer — OUTSIDE the ForEach
+        ProgressView()
+            .frame(maxWidth: .infinity)
+            .id(posts.count)                     // fresh identity per page: re-fires onAppear
+            .onAppear { viewModel.loadMore() }   //   when a short page keeps it visible
+    }
+}
+```
+
+- `loadMore()` is **self-deduping** — the eager `onAppear` can fire freely; it no-ops mid-flight, before the first page, and after the last.
+- A **failed load-more keeps the list**: render `posts.loadMoreError` in the footer (e.g. `SectionErrorView`) with retry = `loadMore()` again. Only first-page failures reach `ViewState.failed`.
+- The Example app's Posts tab is this pattern end-to-end. (`.onReachedBottom` in DesignSystem is a generic `ScrollView` geometry utility — in `List`/lazy stacks, the appearance-based footer above is the pattern.)
+
 ## 5. Navigation
 
 Define a typed route, render with `RouterView`, and let the ViewModel delegate intents. The full per-feature shape — route enum + coordinator + destination factory — is the **coordinator triangle** in [PalNavigation](Products/PalNavigation.md):

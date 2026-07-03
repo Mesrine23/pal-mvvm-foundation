@@ -10,6 +10,9 @@
 - **`.textStyle(_:)`** — apply a `TextStyleToken` from the theme (sugar, never a gate; raw SwiftUI styling always available).
 - **State components** — `ErrorView`, `SectionErrorView`, `EmptyStateView`, `LoadingView`.
 - **`.appAlert(...)`** — themed alert chrome driven by an `AppAlert` value (+ a custom-content overload).
+- **`.appToast(...)`** — transient, non-blocking confirmations driven by an `AppToast` value (auto-dismiss, swipe to dismiss).
+- **Skeleton loading** — `.skeleton(when:)` and `.shimmering(active:)` for the first-load placeholder state.
+- **Scroll observation** — `.onScrollOffsetChange(perform:)` and `.onReachedBottom(threshold:perform:)` over a `.scrollObservationTarget()` content marker.
 - **Utilities** — `hideKeyboard()`, `onFirstAppear { }`, `.shadow(_ token:)`.
 
 Localized en + el; components accept optional custom strings.
@@ -58,6 +61,44 @@ LoadingView(message: "Loading…")
 
 These render the `ViewState` cases (see [PalPresentation](PalPresentation.md)); accessibility labels on actions are built in.
 
+## Skeletons & shimmer
+
+The modern first-load affordance: render your **real layout with placeholder values**, redacted into shapes with a highlight sweeping across — instead of (or alongside) a spinner.
+
+```swift
+switch viewModel.users.state {
+case .idle, .loading(previous: nil):  list(User.placeholders).skeleton(when: true)
+case .loading(previous: let cached?): list(cached)          // refresh keeps real content
+case .loaded(let users):              list(users)
+// …
+}
+
+extension User {   // app-side placeholder values — masked, never rendered; length sizes the bars
+    static let placeholders: [User] = (1...8).map { User(id: -$0, name: "Placeholder Person Name", …) }
+}
+```
+
+- **`.skeleton(when:)`** = `.redacted(reason: .placeholder)` + shimmer + interaction disabled, in one modifier. Reusing your real row view keeps the skeleton pixel-accurate for free.
+- **`.shimmering(active:)`** is the sweep alone — usable on any custom placeholder (works by masking, so it needs no color configuration and sits correctly on any background).
+- `LoadingView` remains the right choice where a layout has no meaningful shape to preview (full-screen waits, submissions).
+
+## Scroll observation
+
+Geometry utilities for plain `ScrollView` compositions — offset-driven effects (collapsing headers, a scroll-to-top button) and bottom-proximity work:
+
+```swift
+ScrollView {
+    content
+        .scrollObservationTarget()            // marks the measured content
+}
+.onScrollOffsetChange { offset in isHeaderCollapsed = offset > 100 }
+.onReachedBottom(threshold: 200) { /* bottom entered the zone (fires once per entry) */ }
+```
+
+- The pair is deliberate: the **target** marks the content being measured; the observers sit on the `ScrollView`. `onReachedBottom` re-arms when the bottom leaves the zone, and also fires when content is shorter than the viewport.
+- **In `List` and lazy stacks**, rows materialize on scroll — trigger work from the appearance of a trailing row instead of measuring geometry (that is also the canonical pagination trigger; see [PalPresentation](PalPresentation.md)).
+- On an iOS 18+ floor the native `onScrollGeometryChange` supersedes `onScrollOffsetChange`; these are the iOS 17-compatible equivalents.
+
 ## Alerts (action-failure channel)
 
 ```swift
@@ -74,6 +115,25 @@ alert = .error(presentableError)
 Declare case-specific alerts as static factories on `AppAlert`. For bespoke content, use the overload `.appAlert($item) { item in CustomContent(item) }` — the foundation owns the chrome (dim, card, animation, dismiss).
 
 **Known limitation:** a root-level overlay does not render above an active `.sheet` — apply `.appAlert` per presentation context.
+
+## Toasts (non-blocking confirmations)
+
+The other half of the ACTION channel: `.appAlert` interrupts for failures that need acknowledgement; a **toast** confirms without stealing focus — "Saved", "Scheduled", "Copied".
+
+```swift
+@State private var toast: AppToast?
+
+someView
+    .appToast($toast)
+
+// AppToast { kind: .info/.success/.warning/.error, title, message?, duration (default 3 s) }
+toast = AppToast(kind: .success, title: String(localized: "Saved"))
+```
+
+- Auto-dismisses after `duration`; swipe down (or the accessibility "Dismiss" action) dismisses early; presenting a new value replaces the current one.
+- Themed by tokens (surface card, semantic tint per `kind`, elevation shadow) — no configuration needed.
+- Declare app toasts as static factories on `AppToast`, like alerts.
+- Same placement caveat as `.appAlert`: apply per presentation context — a root-level overlay does not render above an active `.sheet`.
 
 ## Notes
 

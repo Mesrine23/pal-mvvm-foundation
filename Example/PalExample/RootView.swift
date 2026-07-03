@@ -26,6 +26,11 @@ struct RootView: View {
                 }
                 .id(environmentToken)
             }
+            Tab("Posts", systemImage: "doc.plaintext", value: .posts) {
+                NavigationStack {
+                    PostsView(viewModel: container.makePostsViewModel())
+                }
+            }
             Tab("Settings", systemImage: "gearshape", value: .settings) {
                 NavigationStack {
                     SettingsView(
@@ -55,5 +60,6 @@ struct RootView: View {
 
 private enum AppTab {
     case users
+    case posts
     case settings
 }

@@ -123,6 +123,8 @@ final class AppContainer {
 
 **Partial failure** — optional topics typed `Result<Value, PresentableError>` inside the composite; View renders content or `SectionErrorView` per topic; critical call still throws.
 
+**Pagination** — `PagedLoader` accumulates pages into one `ViewState` (the screen's switch is unchanged). The trigger is the trailing footer row **outside the `ForEach`**, firing `loadMore()` on appearance — `.id(items.count)` re-arms it when a short page keeps it visible. A failed load-more keeps the list (footer retry); only first-page failures reach `ViewState.failed`. `.onReachedBottom` is a generic scroll utility, not the pagination trigger.
+
 **Failure channels** — LOAD failures drive `ViewState.failed` (full error screen or banner over stale data); ACTION failures (screen keeps its data) drive `.appAlert`.
 
 **Delegation (child → owner)** — when a child reports back to the owner that presents it (navigation, flow completion), use a `‹Context›Delegate`: `@MainActor protocol …: AnyObject`, held **weak**, intent-named methods (`showUserDetail(_:)`, `checkoutDidFinish(_:)`). Prefer it over passing closures or `Binding`s upward. Use a **closure** for a single one-shot callback, and an **`AsyncStream`** for broadcast events (why `AuthEvent.loggedOut` is a stream, not a delegate).
