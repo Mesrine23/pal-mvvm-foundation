@@ -28,6 +28,7 @@ final class AppContainer {
     private let cache = MemoryCache()
     private let tokenStore = KeychainTokenStore()
     private let usersRepo: any UsersRepoProtocol
+    private let postsRepo: any PostsRepoProtocol
 
     init() {
         appState = AppState(defaults: defaults)
@@ -56,6 +57,7 @@ final class AppContainer {
         )
         #endif
         usersRepo = UsersRepository(client: client, cache: cache)
+        postsRepo = PostsRepository(client: client)
     }
 
     /// Builds the users-list ViewModel, injecting its navigation delegate.
@@ -70,6 +72,11 @@ final class AppContainer {
     /// Builds the user-detail ViewModel for a selected user.
     func makeUserDetailViewModel(user: User) -> UserDetailViewModel {
         UserDetailViewModel(user: user, defaults: defaults, flags: flags, analytics: analytics)
+    }
+
+    /// Builds the paginated-posts ViewModel.
+    func makePostsViewModel() -> PostsViewModel {
+        PostsViewModel(fetchPage: FetchPostsPageUseCase(postsRepo: postsRepo), analytics: analytics)
     }
 
     /// Builds the settings ViewModel.
