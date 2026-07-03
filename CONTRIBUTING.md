@@ -76,7 +76,7 @@ Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-cha
 |---|---|---|---|
 | Shimmer + skeleton (`.shimmering` / `.skeleton`) | PalDesignSystem | ✅ | `v1.1.0` |
 | Scroll observation (`.scrollObservationTarget` + `.onScrollOffsetChange` / `.onReachedBottom`) | PalDesignSystem | ✅ | `v1.1.0` |
-| `PagedLoader` + pagination pattern docs (owner's last-row `onAppear` trigger is the documented primary) | PalPresentation | — | `v1.1.0` |
+| `PagedLoader` + pagination pattern docs (owner's last-row `onAppear` trigger is the documented primary) | PalPresentation | ✅ | `v1.1.0` |
 | Toast (non-blocking ACTION channel) | PalDesignSystem | — | `v1.1.0` |
 | `PalWeb` — WebScreen + navigation policy seam + external-link opener | new product | — | `v1.2.0` |
 | Reachability (`NWPathMonitor` seam) | PalNetworking | — | `v1.3.0` |
