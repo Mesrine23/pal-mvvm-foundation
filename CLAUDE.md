@@ -20,7 +20,7 @@ Every change must leave `swift build` + `swift test` green and the Example app c
 
 ## Package dependency DAG (enforced — never add edges)
 
-`PalCore→∅` · `PalPersistence→Core` · `PalNetworking→Core` · `PalAuth→Core,Networking,Persistence` · `PalPresentation→Core` · `PalNavigation→∅` · `PalDesignSystem→Core,Presentation` · `PalAnalytics→Core` · `PalFeatureFlags→Core` · `PalDebugKit→Core,Networking,Persistence` (not DesignSystem) · `PalNotifications→Core`.
+`PalCore→∅` · `PalPersistence→Core` · `PalNetworking→Core` · `PalAuth→Core,Networking,Persistence` · `PalPresentation→Core` · `PalNavigation→∅` · `PalDesignSystem→Core,Presentation` · `PalAnalytics→Core` · `PalFeatureFlags→Core` · `PalDebugKit→Core,Networking,Persistence` (not DesignSystem) · `PalNotifications→Core` · `PalWeb→Core,Presentation`.
 
 Every target declares ALL modules it directly imports (no transitive reliance). No SwiftUI in PalCore. Zero external dependencies in the package — Swinject exists only app-side (Example).
 
@@ -68,4 +68,4 @@ Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Val
 - [DECISIONS](Documentation/DECISIONS.md) — the design and its rationale (a living document, open to discussion).
 - [CONTRIBUTING](CONTRIBUTING.md) — build/verify, **implementation status & phase log**, and the deviations log.
 
-**Status lives in CONTRIBUTING** (single source — do not restate it here, so it can't go stale). At a glance: all 11 products are built. **When you change an API, a decision, or a product's behavior, update the affected docs in the same change.**
+**Status lives in CONTRIBUTING** (single source — do not restate it here, so it can't go stale). At a glance: all 12 products are built. **When you change an API, a decision, or a product's behavior, update the affected docs in the same change.**

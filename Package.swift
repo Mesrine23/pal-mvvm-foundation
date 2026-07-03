@@ -20,6 +20,7 @@ let package = Package(
         .library(name: "PalFeatureFlags", targets: ["PalFeatureFlags"]),
         .library(name: "PalDebugKit", targets: ["PalDebugKit"]),
         .library(name: "PalNotifications", targets: ["PalNotifications"]),
+        .library(name: "PalWeb", targets: ["PalWeb"]),
     ],
     targets: [
         .target(
@@ -48,6 +49,11 @@ let package = Package(
         .target(name: "PalFeatureFlags", dependencies: ["PalCore"]),
         .target(name: "PalDebugKit", dependencies: ["PalCore", "PalNetworking", "PalPersistence"]),
         .target(name: "PalNotifications", dependencies: ["PalCore"]),
+        .target(name: "PalWeb", dependencies: ["PalCore", "PalPresentation"]),
+        .testTarget(
+            name: "PalWebTests",
+            dependencies: ["PalWeb"]
+        ),
         .testTarget(
             name: "PalNotificationsTests",
             dependencies: ["PalNotifications"]
@@ -81,7 +87,7 @@ let package = Package(
             dependencies: [
                 "PalCore", "PalPersistence", "PalNetworking", "PalAuth", "PalPresentation",
                 "PalNavigation", "PalDesignSystem", "PalAnalytics", "PalFeatureFlags", "PalDebugKit",
-                "PalNotifications",
+                "PalNotifications", "PalWeb",
             ]
         ),
     ]
