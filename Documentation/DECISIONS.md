@@ -136,6 +136,7 @@ Rules:
 - `PresentableError`: `title`, `message`, `isRetryable`; domain errors map via one small protocol; localized default strings ship in-package (en + el).
 - `Loader<Value: Sendable>` (`@MainActor @Observable`): the per-content runner a ViewModel **holds** — one per independently-loadable section. `state` is `private(set)` (only the loader mutates it). `load { }` — cancels the previous in-flight load (re-trigger dedupe), sets `.loading(previous:)`, maps errors to `PresentableError`, **swallows `CancellationError`**, `[weak self]`; `performLoad { } async` for `.task {}` (view-lifecycle cancellation); `refresh { } async` for `.refreshable {}` (reloads **in place** — no `.loading` transition, since the refresh control is the indicator); `cancel()`. The runner owns re-trigger cancellation; `.task` owns lifecycle cancellation. Multiple loaders per VM cover multi-section / partial-failure screens. *(Replaced the earlier `LoadableViewModelProtocol`, whose `{get set}` requirement couldn't keep `state` `private(set)` and allowed only one state per VM — see deviations log.)*
 - Channel split: LOAD failures → `ViewState` · ACTION failures (screen keeps data) → `AppAlert` (DesignSystem).
+- **`PagedLoader<Item, Cursor>` (`v1.1.0`, additive):** pagination machinery — accumulated items drive the same `ViewState`; `loadMore()` appends with its own footer state (`isLoadingMore` / `hasMore` / `loadMoreError` — a failed load-more keeps the list; retry = call `loadMore()` again). Operation injected at `init` (re-invoked with cursors, `nil` = first page) — a recorded asymmetry vs `Loader`. Documented trigger: the trailing footer row **outside the `ForEach`**, firing on `onAppear` (owner's pattern).
 
 ## 13. PalNavigation
 
@@ -182,7 +183,7 @@ Rules:
 ## 18. Recorded policies & trade-offs
 
 - **Images:** default = native `AsyncImage` + documented `URLCache` sizing. Image-heavy apps adopt Nuke/Kingfisher **app-side**. No `PalImage` component in v1.
-- **Pagination:** known pattern-to-design before/with app #1 (no v1 machinery).
+- **Pagination:** shipped `v1.1.0` as `PagedLoader` (§12) — the documented trigger is the trailing row's `onAppear`, not scroll geometry.
 - **Route payloads:** entities (not IDs) — restoration-unfriendly, accepted deliberately.
 - **Delegate growth:** watch during dogfooding; revisit if per-screen delegates bloat. (The delegation *pattern* is blessed — see §6.)
 - **`StateView`:** deliberately not shipped; explicit switch preferred by owner.
