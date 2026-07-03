@@ -30,6 +30,7 @@ PalPersistence   PalNetworking   PalPresentation   PalNavigation
                                 PalDesignSystem
 PalAnalytics · PalFeatureFlags · PalNotifications (→ Core)
 PalDebugKit (→ Core, Networking, Persistence)
+PalWeb (→ Core, Presentation)
 ```
 
 | Product | Role |
@@ -44,6 +45,7 @@ PalDebugKit (→ Core, Networking, Persistence)
 | `PalAnalytics` / `PalFeatureFlags` | Provider-agnostic seams + NoOp/Console/Composite/InMemory impls |
 | `PalDebugKit` | Shake debug menu (overlay window): network Logs, API environment switcher, Mocks — runtime-enabled, gated app-side by the `DEBUGKIT` flag |
 | `PalNotifications` | `NotificationService`: permission, local scheduling (immediate/delayed/calendar), APNs token plumbing, tap-response + push-event streams, foreground policy, categories |
+| `PalWeb` | `WebScreen` (WKWebView) driving a `WebPageModel`'s `ViewState`, app-supplied navigation policy (allow/cancel/open-externally) |
 
 Each product has a usage guide in [Documentation/Products/](Products/).
 

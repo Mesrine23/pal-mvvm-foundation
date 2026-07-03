@@ -60,6 +60,8 @@ struct SettingsView: View {
             }
             Section("About") {
                 LabeledContent("Version", value: viewModel.appVersion)
+                NavigationLink("About Pal") { AboutPalView() }
+                Button("Pal on GitHub") { viewModel.openRepository() }
             }
         }
         .navigationTitle("Settings")

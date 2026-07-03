@@ -5,6 +5,7 @@ import PalAnalytics
 import PalFeatureFlags
 import PalDebugKit
 import PalNotifications
+import PalWeb
 
 /// The app's composition root — manual constructor injection, no DI framework.
 /// One factory method per feature; dependencies are built once and shared.
@@ -85,7 +86,8 @@ final class AppContainer {
             tokenStore: tokenStore,
             flags: flags,
             analytics: analytics,
-            notifications: notifications
+            notifications: notifications,
+            linkOpener: ExternalLinkOpener()
         )
     }
 

@@ -19,6 +19,7 @@ A reusable, **zero-dependency** iOS foundation — one Swift Package, multiple f
 | `PalFeatureFlags` | Synchronous feature-flag seam + in-memory/no-op | [→](Documentation/Products/PalFeatureFlags.md) |
 | `PalDebugKit` | Shake-to-debug: network logs, environment switcher, mocks | [→](Documentation/Products/PalDebugKit.md) |
 | `PalNotifications` | Push + local notifications: permission, scheduling, APNs plumbing, tap routing | [→](Documentation/Products/PalNotifications.md) |
+| `PalWeb` | Embedded web pages with `ViewState` + navigation policy, external-browser opener | [→](Documentation/Products/PalWeb.md) |
 
 ## Install
 

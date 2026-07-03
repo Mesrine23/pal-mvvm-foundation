@@ -42,6 +42,7 @@ Products and their **only allowed** dependencies (downward only, enforced in `Pa
 | `PalFeatureFlags` | Core |
 | `PalDebugKit` | Core, Networking, Persistence (NOT DesignSystem — debug UI is self-contained) |
 | `PalNotifications` | Core (+ the system `UserNotifications` framework) |
+| `PalWeb` | Core, Presentation (+ the system `WebKit` framework) |
 | `Example` app | everything + Swinject (app-side) |
 
 Rules:
@@ -212,7 +213,15 @@ Rules:
 - **`userInfo` crosses as `[String: String]`** (strings + stringified numbers) — deep-link keys and entity ids; complex payload handling stays app-side.
 - **Guidance-only, deliberately outside v1:** Notification Service/Content Extensions (rich push — app targets, can't usefully ship from SPM); time-sensitive/critical interruption levels are additive later.
 
-## 22. Implementation status & deviations log
+## 22. PalWeb (embedded web content, `v1.2.0`)
+
+- **Scope: mechanisms for CONTENT pages** (terms, help, embedded pages) — `WebScreen` (a `WKWebView` representable, UIKit-gated like DebugKit's bridge) + `WebPageModel` (`@MainActor @Observable`: `ViewState<Void>` load state, live title/progress/history flags, `reload`/`goBack`/`goForward`). No `StateView` here either — the screen composes its own loading/error affordances around the web view, per the explicit-switch philosophy.
+- **The seam is the navigation policy:** `WebNavigationPolicy = (WebNavigationRequest) -> WebNavigationDecision` (`allow` / `cancel` / `openExternally`) — the app ships the policy (which hosts stay in), Pal ships the machinery. Initial-request `headers` supported; cookie management deliberately NOT wrapped (additive later if dogfooding demands).
+- **Named `WebScreen`, not `WebView`** — iOS 26's SwiftUI ships a native `WebView`; the name avoids the collision on newer floors.
+- **OAuth stays OUT of embedded web views:** sign-in uses `ASWebAuthenticationSession` app-side (RFC 8252) — recorded guidance, not machinery. JS message bridge deferred (additive later).
+- Cancelled navigations (`NSURLErrorCancelled`) never surface — the foundation's cancellation rule.
+
+## 23. Implementation status & deviations log
 
 Phase-by-phase status and the audit trail of approved deviations from this design are contributor-facing, not part of the design reference — they live in **[CONTRIBUTING](../CONTRIBUTING.md)**.
 
