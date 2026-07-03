@@ -10,6 +10,7 @@
 - **`.textStyle(_:)`** — apply a `TextStyleToken` from the theme (sugar, never a gate; raw SwiftUI styling always available).
 - **State components** — `ErrorView`, `SectionErrorView`, `EmptyStateView`, `LoadingView`.
 - **`.appAlert(...)`** — themed alert chrome driven by an `AppAlert` value (+ a custom-content overload).
+- **Skeleton loading** — `.skeleton(when:)` and `.shimmering(active:)` for the first-load placeholder state.
 - **Utilities** — `hideKeyboard()`, `onFirstAppear { }`, `.shadow(_ token:)`.
 
 Localized en + el; components accept optional custom strings.
@@ -57,6 +58,27 @@ LoadingView(message: "Loading…")
 ```
 
 These render the `ViewState` cases (see [PalPresentation](PalPresentation.md)); accessibility labels on actions are built in.
+
+## Skeletons & shimmer
+
+The modern first-load affordance: render your **real layout with placeholder values**, redacted into shapes with a highlight sweeping across — instead of (or alongside) a spinner.
+
+```swift
+switch viewModel.users.state {
+case .idle, .loading(previous: nil):  list(User.placeholders).skeleton(when: true)
+case .loading(previous: let cached?): list(cached)          // refresh keeps real content
+case .loaded(let users):              list(users)
+// …
+}
+
+extension User {   // app-side placeholder values — masked, never rendered; length sizes the bars
+    static let placeholders: [User] = (1...8).map { User(id: -$0, name: "Placeholder Person Name", …) }
+}
+```
+
+- **`.skeleton(when:)`** = `.redacted(reason: .placeholder)` + shimmer + interaction disabled, in one modifier. Reusing your real row view keeps the skeleton pixel-accurate for free.
+- **`.shimmering(active:)`** is the sweep alone — usable on any custom placeholder (works by masking, so it needs no color configuration and sits correctly on any background).
+- `LoadingView` remains the right choice where a layout has no meaningful shape to preview (full-screen waits, submissions).
 
 ## Alerts (action-failure channel)
 

@@ -21,7 +21,7 @@ struct UsersListView: View {
     private var content: some View {
         switch viewModel.users.state {
         case .idle, .loading(previous: nil):
-            LoadingView(message: String(localized: "Loading users…"))
+            list(User.placeholders).skeleton(when: true)
         case .loading(previous: let cached?):
             list(cached)
         case .loaded(let users):
