@@ -68,6 +68,26 @@ enum UserError: Error, PresentableErrorConvertible {
 
 Hold **several** `Loader`s on one ViewModel for independently-loadable sections. For one composite call where a topic may fail without failing the screen, model fields as `Result<Value, PresentableError>` and render an inline `SectionErrorView` (see [PalDesignSystem](PalDesignSystem.md)).
 
+## Pagination: `PagedLoader`
+
+`Loader`'s sibling for infinite lists — the accumulated items drive the **same** `ViewState` switch, and pages append through a footer-sized side channel:
+
+```swift
+@MainActor @Observable
+final class PostsViewModel {
+    let posts: PagedLoader<Post, Int>
+    init(fetchPosts: FetchPostsUseCaseProtocol) {
+        posts = PagedLoader { page in try await fetchPosts.execute(page: page ?? 1) }
+    }
+}
+```
+
+- The operation is **injected at `init`** (deliberate asymmetry vs `Loader`): the loader re-invokes it with successive cursors — `nil` means first page; your `Page(items:nextCursor:)` supplies the next cursor (`nil` = the end, disarming `hasMore`).
+- First page = the familiar trio: `load()` / `performLoad()` (for `.task`) / `refresh()` (pull-to-refresh, no `.loading`, restarts from page one).
+- **`loadMore()`** appends the next page — fire-and-forget, self-deduping (no-ops while any fetch is in flight, before the first page, or after the last). Trigger it from the appearance of the **trailing footer row that sits outside the `ForEach`** — the canonical pattern, shown in [Getting Started](../GettingStarted.md).
+- **A failed load-more never touches the list**: items stay, `loadMoreError` drives an inline footer retry (which just calls `loadMore()` again — it clears the error). Only first-page failures go through `ViewState.failed`.
+- Footer contract: `isLoadingMore` → spinner · `loadMoreError` → retry · `hasMore == false` → nothing (or an end-of-list note).
+
 ## Notes
 
 - Channel split: **LOAD** failures → `ViewState` (full error or banner over stale data); **ACTION** failures (screen keeps its data) → `.appAlert` (DesignSystem).
