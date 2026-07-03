@@ -77,12 +77,14 @@ Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-cha
 | Shimmer + skeleton (`.shimmering` / `.skeleton`) | PalDesignSystem | ✅ | `v1.1.0` |
 | Scroll observation (`.scrollObservationTarget` + `.onScrollOffsetChange` / `.onReachedBottom`) | PalDesignSystem | ✅ | `v1.1.0` |
 | `PagedLoader` + pagination pattern docs (owner's last-row `onAppear` trigger is the documented primary) | PalPresentation | ✅ | `v1.1.0` |
-| Toast (non-blocking ACTION channel) | PalDesignSystem | — | `v1.1.0` |
+| Toast (non-blocking ACTION channel) | PalDesignSystem | ✅ | `v1.1.0` |
 | `PalWeb` — WebScreen + navigation policy seam + external-link opener | new product | — | `v1.2.0` |
 | Reachability (`NWPathMonitor` seam) | PalNetworking | — | `v1.3.0` |
 | `BiometricAuthenticator` | PalAuth | — | `v1.3.0` |
 
 Parked (owner hold / no verdict): keyboard utilities beyond `hideKeyboard()` · PalTestSupport + broad tests (Phase 11) · DocC · a networked second test app. Declined for now: DebugKit round 2 (flags tab, log export, per-client custom envs).
+
+> **`v1.1.0` shipped** (2026-07-03): the list-screen bundle — skeleton/shimmer, scroll observation, `PagedLoader` + the canonical pagination pattern (dogfooded by the Example's Posts tab), and toast. Additive-only, verified against `v1.0.0` with `diagnose-api-breaking-changes`.
 
 ## Deviations log
 
