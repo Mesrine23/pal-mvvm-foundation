@@ -244,6 +244,7 @@ RouterView(router: router, root: .list) { route in   // `root` is a Route case �
 - **Analytics / flags** — register `NoOp…` by default; swap to real providers at the composition root. See [PalAnalytics](Products/PalAnalytics.md) / [PalFeatureFlags](Products/PalFeatureFlags.md).
 - **Theming** — works with `Theme.system` out of the box; brand with `.theme(myTheme)`. See [PalDesignSystem](Products/PalDesignSystem.md).
 - **Notifications** — create one `NotificationService` at the composition root (claims the delegate seat for cold-start taps); schedule typed `LocalNotification`s (fire-now or scheduled), forward APNs callbacks from a 5-line `UIApplicationDelegateAdaptor`, and route taps via the `responses` stream. See [PalNotifications](Products/PalNotifications.md).
+- **Web pages** — embed terms/help/docs with `WebScreen` + a navigation policy (yours decides what stays in and what opens externally); `ExternalLinkOpener` for non-View contexts. OAuth stays in `ASWebAuthenticationSession`, app-side. See [PalWeb](Products/PalWeb.md).
 - **Debug tools** — shake to open `PalDebugKit` (network logs, env switcher, mocks); wire it behind your app's `DEBUGKIT` flag at the composition root. See [PalDebugKit](Products/PalDebugKit.md).
 
 ## Updating the foundation while building your app

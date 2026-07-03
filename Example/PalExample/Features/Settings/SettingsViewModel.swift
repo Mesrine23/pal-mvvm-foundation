@@ -8,6 +8,7 @@ import PalFeatureFlags
 import PalNetworking
 import PalNotifications
 import PalPresentation
+import PalWeb
 
 /// Drives the settings screen: a live feature-flag toggle, a demo Keychain-backed
 /// session, the notifications demo (permission, local scheduling, APNs), app info,
@@ -42,18 +43,21 @@ final class SettingsViewModel {
     @ObservationIgnored private let flags: InMemoryFeatureFlagsProvider
     @ObservationIgnored private let analytics: any AnalyticsTracker
     @ObservationIgnored private let notifications: NotificationService
+    @ObservationIgnored private let linkOpener: ExternalLinkOpener
 
     /// Creates the ViewModel.
     init(
         tokenStore: KeychainTokenStore,
         flags: InMemoryFeatureFlagsProvider,
         analytics: any AnalyticsTracker,
-        notifications: NotificationService
+        notifications: NotificationService,
+        linkOpener: ExternalLinkOpener
     ) {
         self.tokenStore = tokenStore
         self.flags = flags
         self.analytics = analytics
         self.notifications = notifications
+        self.linkOpener = linkOpener
         self.appVersion = "\(AppInfo.current.version) (\(AppInfo.current.build))"
         self.showsUserEmail = flags.isEnabled(.showsUserEmail)
     }
@@ -114,6 +118,12 @@ final class SettingsViewModel {
         } catch {
             alert = .error(PresentableError(from: error))
         }
+    }
+
+    /// Opens the Pal repository in the external browser (the non-View opener).
+    func openRepository() {
+        analytics.track(.screenViewed("repository-external"))
+        linkOpener.open(AppConfig.repositoryURL)
     }
 
     /// Kicks off APNs registration; the outcome lands in ``pushRegistrationText``.

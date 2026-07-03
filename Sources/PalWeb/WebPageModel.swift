@@ -12,7 +12,7 @@ import WebKit
 ///
 /// WebScreen(url: termsURL, page: page)
 ///     .overlay {
-///         if case .failed(let error, _) = page.state {
+///         if let error = page.state.error {
 ///             ErrorView(error) { page.reload() }
 ///         }
 ///     }

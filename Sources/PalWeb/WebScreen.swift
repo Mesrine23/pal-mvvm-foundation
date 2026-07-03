@@ -140,7 +140,7 @@ public struct WebScreen: UIViewRepresentable {
             case .cancel:
                 decisionHandler(.cancel)
             case .openExternally:
-                UIApplication.shared.open(url)
+                ExternalLinkOpener().open(url)
                 decisionHandler(.cancel)
             }
         }

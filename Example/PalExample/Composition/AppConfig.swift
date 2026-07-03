@@ -21,4 +21,12 @@ nonisolated enum AppConfig {
         }
         return url
     }()
+
+    /// The Pal repository — the About screen's embedded page.
+    static let repositoryURL: URL = {
+        guard let url = URL(string: "https://github.com/Mesrine23/pal-mvvm-foundation") else {
+            preconditionFailure("Invalid repository URL literal")
+        }
+        return url
+    }()
 }
