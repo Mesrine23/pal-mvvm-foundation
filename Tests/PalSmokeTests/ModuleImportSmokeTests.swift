@@ -10,6 +10,7 @@ import PalAnalytics
 import PalFeatureFlags
 import PalDebugKit
 import PalNotifications
+import PalWeb
 
 @Suite("Package smoke")
 struct ModuleImportSmokeTests {
