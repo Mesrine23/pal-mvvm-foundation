@@ -131,6 +131,7 @@ Rules:
 ## 11. PalAuth
 
 - Glue product: `KeychainTokenStore` implementing `TokenStore` via `KeychainService` + `KeychainKey<AuthTokens>`. Keeps Networking and Persistence independent of each other.
+- **Biometrics (`v1.3.0`, additive):** `BiometricAuthenticator` over an internal `LAContext` seam (spy-tested; fresh context per evaluation — the stale-context pitfall is Pal's problem, not the app's). `authenticate(reason:allowingPasscodeFallback:fallbackTitle:) throws(BiometricError) -> BiometricOutcome` — **cancellation and the fallback button are outcomes, not errors** (rule 12); real failures are typed (`unavailable`/`notEnrolled`/`lockedOut`/`failed`) for `.appAlert`. Reason/titles are app values; `NSFaceIDUsageDescription` is the app's plist duty.
 
 ## 12. PalPresentation
 

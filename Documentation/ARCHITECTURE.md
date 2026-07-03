@@ -38,7 +38,7 @@ PalWeb (→ Core, Presentation)
 | `PalCore` | LoggerFactory (os.Logger), curated Foundation extensions, Debouncer/withTimeout, AppInfo, AppLanguage |
 | `PalPersistence` | KeychainService (throwing), UserDefaultsService, typed keys (`KeychainKey`/`DefaultsKey`), MemoryCache (actor, passive TTL, memory-only) |
 | `PalNetworking` | `Request<Response>`, `HTTPClient` (typed `throws(NetworkError)`), interceptor onion over `TransportRequest`, `TokenProvider` single-flight refresh actor |
-| `PalAuth` | `KeychainTokenStore` glue (TokenStore ⇄ KeychainService) |
+| `PalAuth` | `KeychainTokenStore` glue (TokenStore ⇄ KeychainService) + `BiometricAuthenticator` (Face ID/Touch ID, typed outcomes) |
 | `PalPresentation` | `ViewState<Value>`, `PresentableError`, `Loader<Value>` (the owned per-section runner) |
 | `PalNavigation` | `Routable`, `Router<Route>`, `RouterView`, deep-link strategies, Identifiable modal items |
 | `PalDesignSystem` | Opt-in Theme (system default), `.textStyle`, ErrorView/SectionErrorView/EmptyStateView/LoadingView, `.appAlert`, SwiftUI utilities, en+el catalogs |
