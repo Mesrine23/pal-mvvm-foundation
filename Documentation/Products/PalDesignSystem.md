@@ -11,6 +11,7 @@
 - **State components** — `ErrorView`, `SectionErrorView`, `EmptyStateView`, `LoadingView`.
 - **`.appAlert(...)`** — themed alert chrome driven by an `AppAlert` value (+ a custom-content overload).
 - **Skeleton loading** — `.skeleton(when:)` and `.shimmering(active:)` for the first-load placeholder state.
+- **Scroll observation** — `.onScrollOffsetChange(perform:)` and `.onReachedBottom(threshold:perform:)` over a `.scrollObservationTarget()` content marker.
 - **Utilities** — `hideKeyboard()`, `onFirstAppear { }`, `.shadow(_ token:)`.
 
 Localized en + el; components accept optional custom strings.
@@ -79,6 +80,23 @@ extension User {   // app-side placeholder values — masked, never rendered; le
 - **`.skeleton(when:)`** = `.redacted(reason: .placeholder)` + shimmer + interaction disabled, in one modifier. Reusing your real row view keeps the skeleton pixel-accurate for free.
 - **`.shimmering(active:)`** is the sweep alone — usable on any custom placeholder (works by masking, so it needs no color configuration and sits correctly on any background).
 - `LoadingView` remains the right choice where a layout has no meaningful shape to preview (full-screen waits, submissions).
+
+## Scroll observation
+
+Geometry utilities for plain `ScrollView` compositions — offset-driven effects (collapsing headers, a scroll-to-top button) and bottom-proximity work:
+
+```swift
+ScrollView {
+    content
+        .scrollObservationTarget()            // marks the measured content
+}
+.onScrollOffsetChange { offset in isHeaderCollapsed = offset > 100 }
+.onReachedBottom(threshold: 200) { /* bottom entered the zone (fires once per entry) */ }
+```
+
+- The pair is deliberate: the **target** marks the content being measured; the observers sit on the `ScrollView`. `onReachedBottom` re-arms when the bottom leaves the zone, and also fires when content is shorter than the viewport.
+- **In `List` and lazy stacks**, rows materialize on scroll — trigger work from the appearance of a trailing row instead of measuring geometry (that is also the canonical pagination trigger; see [PalPresentation](PalPresentation.md)).
+- On an iOS 18+ floor the native `onScrollGeometryChange` supersedes `onScrollOffsetChange`; these are the iOS 17-compatible equivalents.
 
 ## Alerts (action-failure channel)
 
