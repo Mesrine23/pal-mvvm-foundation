@@ -1,7 +1,7 @@
 import SwiftUI
 import PalPresentation
 
-/// The full-screen failure state: renders a ``PalPresentation/PresentableError``
+/// The full-screen failure state: renders a `PresentableError`
 /// with an optional Retry button (shown only when the error is retryable and a
 /// handler is provided). Use for first-load failures; refresh failures with data
 /// on screen belong in a banner over the stale content.

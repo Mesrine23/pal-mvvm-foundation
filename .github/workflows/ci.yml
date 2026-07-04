@@ -9,7 +9,18 @@ jobs:
   build-and-test:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - name: Swift version
+        run: swift --version
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
+
+  build-and-test-latest:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
       - name: Swift version
         run: swift --version
       - name: Build
@@ -20,7 +31,7 @@ jobs:
   api-stability:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Diff public API against the latest release tag
