@@ -23,7 +23,7 @@
 | Versioning | SemVer via git tags — **`v1.0.0` shipped 2026-07-02** (all 11 products, two dogfood apps). Breaking = major with deprecation-first (§19), enforced by the `api-stability` CI gate; consumers pin tags with `from:` |
 | Repo visibility | Public (MIT) |
 | License | **MIT** |
-| CI | GitHub Actions: `swift build && swift test` on push/PR (macOS runner) |
+| CI | GitHub Actions on push/PR: build+test on **both toolchain edges** (`macos-15` = Xcode 16 consumer floor · `macos-26` = latest) + the `api-stability` gate; a `Docs` workflow publishes DocC to GitHub Pages on release tags |
 
 ## 3. Package map & dependency DAG
 
@@ -190,6 +190,7 @@ Rules:
 - **Route payloads:** entities (not IDs) — restoration-unfriendly, accepted deliberately.
 - **Delegate growth:** watch during dogfooding; revisit if per-screen delegates bloat. (The delegation *pattern* is blessed — see §6.)
 - **`StateView`:** deliberately not shipped; explicit switch preferred by owner.
+- **DocC (post-1.0):** API reference is generated from the mandatory `///` docs + a curated `<Target>.docc` catalog per product, hosted on GitHub Pages. Built **plugin-free** via `xcodebuild docbuild` in CI — deliberately NOT `swift-docc-plugin`, which would put an external package in `Package.swift` and dent the zero-dependency guarantee. Cross-module symbols use plain code voice in doc comments (DocC links resolve only within a module). The markdown guides remain the narrative layer; DocC is the exhaustive symbol layer.
 
 ## 19. Workflows
 

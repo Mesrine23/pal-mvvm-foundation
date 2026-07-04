@@ -10,7 +10,9 @@ swift test         # smoke + targeted tests
 # Example app: open Example/PalExample.xcodeproj (or xcodebuild -project … -scheme PalExample)
 ```
 
-Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI enforces this on push/PR (GitHub Actions, macOS runner). The macOS 14 platform floor exists only so the host can build/test; products target iOS — UIKit-only surfaces are gated with `#if canImport(UIKit)`.
+Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI enforces this on push/PR on **both toolchain edges** — `macos-15` (Xcode 16 / Swift 6.1, the consumer floor) and `macos-26` (latest) — plus the `api-stability` gate; the two-edge matrix exists because newer SDKs concurrency-annotate system frameworks, so one edge can pass where the other breaks (the `v1.3.1` lesson, in the deviations log). The macOS 14 platform floor exists only so the host can build/test; products target iOS — UIKit-only surfaces are gated with `#if canImport(UIKit)`.
+
+**API reference docs are generated, not hand-written:** the `Docs` workflow builds DocC for all 12 products on every release tag (plugin-free `xcodebuild docbuild` — the package manifest stays zero-dependency) and publishes to [GitHub Pages](https://mesrine23.github.io/pal-mvvm-foundation/). Each product has a curated `Sources/<Target>/<Target>.docc` catalog: **when you add a public symbol, add it to the catalog's Topics** (an uncurated symbol still appears, just unorganized — visible decay, fix it in the same change).
 
 ## The rules are binding
 
@@ -95,6 +97,8 @@ Parked (owner hold / no verdict): keyboard utilities beyond `hideKeyboard()` · 
 ## Deviations log
 
 The audit trail of approved exceptions where implementation reality met the design.
+
+- **Docs/CI tooling merged to `main` WITHOUT a release tag (2026-07-04).** GitFlow says `main` carries tagged releases only, but the `Docs` workflow must live on `main` for tag pushes to trigger it, for `workflow_dispatch`, and for Pages deploys — so the DocC/CI-matrix infra merged untagged. No package source changed; consumers pin tags and are unaffected. DocC itself is built **plugin-free** (`xcodebuild docbuild` in CI) so `Package.swift` keeps its zero-dependency guarantee — see DECISIONS §18.
 
 - **Phase 1 — macOS 14 platform floor added to `Package.swift`.** `swift build`/`swift test`/CI compile for the host Mac; without a declared floor SPM assumes macOS 10.13 and modern APIs (os.Logger, Duration, Observation) fail. Products remain iOS-targeted; macOS is build-infrastructure only; UIKit-only surfaces get `#if canImport(UIKit)`.
 - **Phase 1 — `AppInfo` distribution detection (TestFlight/App Store) deferred.** The modern API (`AppTransaction`) requires StoreKit, breaching Core's Foundation-only rule; the receipt heuristic is deprecated. Ship nothing rather than either cost; `distribution() async` is purely additive later, where the first consumer lives.

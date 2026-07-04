@@ -37,7 +37,7 @@ PalWeb (→ Core, Presentation)
 |---|---|
 | `PalCore` | LoggerFactory (os.Logger), curated Foundation extensions, Debouncer/withTimeout, AppInfo, AppLanguage |
 | `PalPersistence` | KeychainService (throwing), UserDefaultsService, typed keys (`KeychainKey`/`DefaultsKey`), MemoryCache (actor, passive TTL, memory-only) |
-| `PalNetworking` | `Request<Response>`, `HTTPClient` (typed `throws(NetworkError)`), interceptor onion over `TransportRequest`, `TokenProvider` single-flight refresh actor |
+| `PalNetworking` | `Request<Response>`, `HTTPClient` (typed `throws(NetworkError)`), interceptor onion over `TransportRequest`, `TokenProvider` single-flight refresh actor, `ReachabilityMonitor` |
 | `PalAuth` | `KeychainTokenStore` glue (TokenStore ⇄ KeychainService) + `BiometricAuthenticator` (Face ID/Touch ID, typed outcomes) |
 | `PalPresentation` | `ViewState<Value>`, `PresentableError`, `Loader<Value>` (the owned per-section runner) |
 | `PalNavigation` | `Routable`, `Router<Route>`, `RouterView`, deep-link strategies, Identifiable modal items |
@@ -127,7 +127,7 @@ final class AppContainer {
 
 **Pagination** — `PagedLoader` accumulates pages into one `ViewState` (the screen's switch is unchanged). The trigger is the trailing footer row **outside the `ForEach`**, firing `loadMore()` on appearance — `.id(items.count)` re-arms it when a short page keeps it visible. A failed load-more keeps the list (footer retry); only first-page failures reach `ViewState.failed`. `.onReachedBottom` is a generic scroll utility, not the pagination trigger.
 
-**Failure channels** — LOAD failures drive `ViewState.failed` (full error screen or banner over stale data); ACTION failures (screen keeps its data) drive `.appAlert`.
+**Failure channels** — LOAD failures drive `ViewState.failed` (full error screen or banner over stale data); ACTION failures (screen keeps its data) drive `.appAlert`; ACTION **confirmations** ("Saved", "Scheduled") drive the non-blocking `.appToast`.
 
 **Delegation (child → owner)** — when a child reports back to the owner that presents it (navigation, flow completion), use a `‹Context›Delegate`: `@MainActor protocol …: AnyObject`, held **weak**, intent-named methods (`showUserDetail(_:)`, `checkoutDidFinish(_:)`). Prefer it over passing closures or `Binding`s upward. Use a **closure** for a single one-shot callback, and an **`AsyncStream`** for broadcast events (why `AuthEvent.loggedOut` is a stream, not a delegate).
 

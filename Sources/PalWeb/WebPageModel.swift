@@ -21,7 +21,7 @@ import WebKit
 public final class WebPageModel {
 
     /// The page's load state — `loading` from navigation start, `loaded` on
-    /// finish, `failed` with a ``PresentableError`` on error (cancelled
+    /// finish, `failed` with a `PresentableError` on error (cancelled
     /// navigations never surface, per the foundation's cancellation rule).
     public private(set) var state: ViewState<Void> = .idle
 

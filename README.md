@@ -27,6 +27,7 @@ In Xcode: **File ▸ Add Package Dependencies…**, paste the repo URL, pin a ve
 
 ## Documentation
 
+- **[API reference (DocC)](https://mesrine23.github.io/pal-mvvm-foundation/)** — symbol-level docs for every product, browsable on the web (or *Product ▸ Build Documentation* in Xcode).
 - **[Getting Started](Documentation/GettingStarted.md)** — from zero to a running feature.
 - **[Architecture](Documentation/ARCHITECTURE.md)** — layers, the dependency DAG, patterns, adoption notes.
 - **[Per-product guides](Documentation/Products/)** — the API and usage of each product.
@@ -39,6 +40,6 @@ In Xcode: **File ▸ Add Package Dependencies…**, paste the repo URL, pin a ve
 swift build && swift test
 ```
 
-The `Example/` app is a runnable showcase: it consumes the package via a local path and dogfoods the products — a canonical Users slice (list → detail over a public API), a paginated Posts list (`PagedLoader` + skeleton loading), and a Settings screen (theming, a feature flag, a demo Keychain session, a notifications demo, app info).
+The `Example/` app is a runnable showcase: it consumes the package via a local path and dogfoods the products — a canonical Users slice (list → detail over a public API), a paginated Posts list (`PagedLoader` + skeleton loading), and a Settings screen (theming, a feature flag, a demo Keychain session, a notifications demo, an embedded About web page, app info).
 
 Xcode file templates for scaffolding use cases, view models, and coordinators live in [`Templates/Xcode/`](Templates/Xcode/) — see its README to install them.
