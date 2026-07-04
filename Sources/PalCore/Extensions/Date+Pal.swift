@@ -3,7 +3,7 @@ import Foundation
 public extension Date {
 
     /// Parses an ISO 8601 string, with or without fractional seconds.
-    /// - Parameter iso8601: A string such as `"2026-06-13T09:41:00Z"` or
+    /// - Parameter string: A string such as `"2026-06-13T09:41:00Z"` or
     ///   `"2026-06-13T09:41:00.123Z"`.
     init?(iso8601 string: String) {
         if let date = try? Date(string, strategy: Date.ISO8601FormatStyle()) {

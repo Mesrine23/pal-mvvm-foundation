@@ -2,8 +2,8 @@ import Foundation
 import PalPersistence
 
 /// Resolves the active base URL **synchronously and off the main actor**, so it
-/// can back an ``HTTPClient``'s `baseURLProvider`. It reads the selection that
-/// ``EnvironmentStore`` persists, so switching environments takes effect on the
+/// can back an `HTTPClient`'s `baseURLProvider`. It reads the selection that
+/// `EnvironmentStore` persists, so switching environments takes effect on the
 /// next request with no client rebuild.
 public enum EnvironmentResolver {
 

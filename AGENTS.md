@@ -18,7 +18,7 @@ swift test         # smoke + targeted tests
 
 Every change must leave `swift build` + `swift test` green and the Example app compiling. CI enforces this on push/PR.
 
-**CI runs an OLDER toolchain than local dev** (`macos-15` = Xcode 16 / Swift 6.1). Newer SDKs concurrency-annotate system frameworks, so local green can hide strict-concurrency errors that CI (and consumers on Xcode 16) hit — after touching any system-framework wrapper, check CI (`gh run list`); the fix pattern is `@preconcurrency import <Framework>` (see the `v1.3.1` deviations entry).
+**CI builds on BOTH toolchain edges** (`macos-15` = Xcode 16 / Swift 6.1 — the consumer floor — and `macos-26` = the latest). Newer SDKs concurrency-annotate system frameworks, so local green can hide strict-concurrency errors the floor hits — after touching any system-framework wrapper, check CI (`gh run list`); the fix pattern is `@preconcurrency import <Framework>` (see the `v1.3.1` deviations entry). A `Docs` workflow publishes DocC to GitHub Pages on release tags; every product has a curated `<Target>.docc` catalog — **add new public symbols to its Topics** when you extend a product.
 
 ## Package dependency DAG (enforced — never add edges)
 

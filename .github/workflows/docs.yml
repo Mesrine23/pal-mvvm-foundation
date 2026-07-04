@@ -1,0 +1,68 @@
+name: Docs
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build DocC archives (plugin-free — keeps the package zero-dependency)
+        run: |
+          set -euo pipefail
+          PRODUCTS="PalCore PalPersistence PalNetworking PalAuth PalPresentation PalNavigation PalDesignSystem PalAnalytics PalFeatureFlags PalDebugKit PalNotifications PalWeb"
+          mkdir -p site
+          for PRODUCT in $PRODUCTS; do
+            echo "::group::docbuild $PRODUCT"
+            xcodebuild docbuild -scheme "$PRODUCT" \
+              -destination 'generic/platform=iOS' \
+              -derivedDataPath .docc-build -quiet
+            LOWER=$(echo "$PRODUCT" | tr '[:upper:]' '[:lower:]')
+            "$(xcrun --find docc)" process-archive transform-for-static-hosting \
+              ".docc-build/Build/Products/Debug-iphoneos/$PRODUCT.doccarchive" \
+              --output-path "site/$LOWER" \
+              --hosting-base-path "pal-mvvm-foundation/$LOWER"
+            echo "::endgroup::"
+          done
+      - name: Generate the landing index
+        run: |
+          set -euo pipefail
+          PRODUCTS="PalCore PalPersistence PalNetworking PalAuth PalPresentation PalNavigation PalDesignSystem PalAnalytics PalFeatureFlags PalDebugKit PalNotifications PalWeb"
+          {
+            echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+            echo '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            echo '<title>Pal — API Documentation</title>'
+            echo '<style>body{font:17px -apple-system,system-ui;max-width:640px;margin:48px auto;padding:0 24px;color:#1d1d1f}h1{font-size:34px}li{margin:6px 0}a{color:#06c;text-decoration:none}a:hover{text-decoration:underline}p{color:#6e6e73}</style>'
+            echo '</head><body><h1>Pal — API Documentation</h1>'
+            echo '<p>Symbol-level reference for every product, generated with DocC. Usage guides live in the <a href="https://github.com/Mesrine23/pal-mvvm-foundation">repository</a>.</p><ul>'
+            for PRODUCT in $PRODUCTS; do
+              LOWER=$(echo "$PRODUCT" | tr '[:upper:]' '[:lower:]')
+              echo "<li><a href=\"$LOWER/documentation/$LOWER/\">$PRODUCT</a></li>"
+            done
+            echo '</ul></body></html>'
+          } > site/index.html
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -27,6 +27,7 @@ In Xcode: **File ▸ Add Package Dependencies…**, paste the repo URL, pin a ve
 
 ## Documentation
 
+- **[API reference (DocC)](https://mesrine23.github.io/pal-mvvm-foundation/)** — symbol-level docs for every product, browsable on the web (or *Product ▸ Build Documentation* in Xcode).
 - **[Getting Started](Documentation/GettingStarted.md)** — from zero to a running feature.
 - **[Architecture](Documentation/ARCHITECTURE.md)** — layers, the dependency DAG, patterns, adoption notes.
 - **[Per-product guides](Documentation/Products/)** — the API and usage of each product.
