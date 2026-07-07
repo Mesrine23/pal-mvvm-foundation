@@ -47,7 +47,7 @@ Every target declares ALL modules it directly imports (no transitive reliance). 
 7. No magic numbers in UI — theme tokens for spacing/radii where DesignSystem is used.
 8. **One primary type per file**, named after it — a protocol may be co-located with its single conforming implementation (e.g. `FetchUsersUseCaseProtocol` + `FetchUsersUseCase` in `FetchUsersUseCase.swift`). Extensions as `Type+Feature.swift`.
 9. Explicit access control; smallest public surface.
-10. Layer rules: Views never touch clients/repos; ViewModels import Domain only; DTO↔entity mapping lives in Data; dependency arrows point inward.
+10. Layer rules: Views never touch clients/repos; ViewModels import Domain + PalPresentation — plus PalDesignSystem **solely to own `AppAlert`/`AppToast` state** (the ACTION-channel values are ViewModel state by design; the chrome stays in Views); DTO↔entity mapping lives in Data; dependency arrows point inward.
 11. Swift 6 hygiene: no `@unchecked Sendable` without written justification; `@MainActor` ViewModels; actors for shared mutable state.
 12. Errors are never silently swallowed; mapped at boundaries (`NetworkError` → domain error → `PresentableError`); cancellation never surfaces to users.
 13. **Reference types are `final` by default** — every class is `final` unless explicitly designed for subclassing (enables static dispatch, signals intent). Structs, enums, and actors need no annotation.
@@ -68,6 +68,7 @@ Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Val
 - [Architecture](Documentation/ARCHITECTURE.md) — layers, the DAG, patterns, adoption notes.
 - [Per-product guides](Documentation/Products/) — the API and usage of each product.
 - [DECISIONS](Documentation/DECISIONS.md) — the design and its rationale (a living document, open to discussion).
+- [CHANGELOG](CHANGELOG.md) — per-release changes, newest first; **every release adds an entry** (part of the release checklist).
 - [CONTRIBUTING](CONTRIBUTING.md) — build/verify, **implementation status & phase log**, and the deviations log.
 
 **Status lives in CONTRIBUTING** (single source — do not restate it here, so it can't go stale). At a glance: all 12 products are built. **When you change an API, a decision, or a product's behavior, update the affected docs in the same change.**
