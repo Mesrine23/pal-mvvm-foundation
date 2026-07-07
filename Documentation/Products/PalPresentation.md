@@ -62,7 +62,12 @@ enum UserError: Error, PresentableErrorConvertible {
 }
 ```
 
-`Loader` maps anything thrown into a `PresentableError` (using your conformance when present, else `.generic`).
+`Loader` maps anything thrown into a `PresentableError` (using your conformance when present, else `.generic`). For **ACTION paths outside a loader** (save/delete handlers), the same mapping is public — `PresentableError(from: error)` — so never hand-roll the conformance-or-generic dance:
+
+```swift
+do { try await deleteUser.execute(id) }
+catch { alert = .error(PresentableError(from: error)) }
+```
 
 ## Multi-section & partial failure
 
@@ -87,6 +92,53 @@ final class PostsViewModel {
 - **`loadMore()`** appends the next page — fire-and-forget, self-deduping (no-ops while any fetch is in flight, before the first page, or after the last). Trigger it from the appearance of the **trailing footer row that sits outside the `ForEach`** — the canonical pattern, shown in [Getting Started](../GettingStarted.md).
 - **A failed load-more never touches the list**: items stay, `loadMoreError` drives an inline footer retry (which just calls `loadMore()` again — it clears the error). Only first-page failures go through `ViewState.failed`.
 - Footer contract: `isLoadingMore` → spinner · `loadMoreError` → retry · `hasMore == false` → nothing (or an end-of-list note).
+
+## Editor screens: fetch with a Loader, edit a draft
+
+High-frequency editors (steppers, toggles, text fields mutating dozens of times a minute) must **not** route every change through `Loader.load` — the loader is a read-screen runner. The pattern:
+
+```swift
+@MainActor @Observable
+final class RequirementsViewModel {
+    let initial = Loader<WeekConfig>()          // the INITIAL fetch only
+    var draft = WeekConfig.empty                // UI truth — synchronous, bindable
+
+    @ObservationIgnored private var saveQueue: Task<Void, Never>?
+
+    func draftChanged() {                       // persist snapshots, ordered
+        let snapshot = draft
+        saveQueue = Task { [previous = saveQueue] in
+            await previous?.value                // chain: order preserved, last write wins
+            try? await save(snapshot)            // route real failures to .appAlert
+        }
+    }
+}
+```
+
+- The `Loader` handles the initial fetch (and seeds `draft` on `.loaded`); from then on **the draft is the single UI truth** — no flag-zoo creeps back in through editors.
+- Chaining each save `Task` onto the previous one preserves write order without an actor queue.
+- A plain form modal that edits the *presenting* screen's state needs no loader at all — see the modal policy in [PalNavigation](PalNavigation.md).
+
+## Optional content: model absence as a case
+
+`Loader<Value?>` nests optionals (`previous` becomes `Value??`) and breaks the copy-paste five-case switch. When "not there yet" is a **legitimate loaded state** (a week not configured, a profile not created), make absence a domain case instead:
+
+```swift
+enum WeekContent: Sendable { case notConfigured; case configured(WeekConfig) }
+let week = Loader<WeekContent>()   // the switch stays flat; absence renders a call-to-action
+```
+
+## Reloading on return (re-fetch after write)
+
+After a pushed screen writes and pops back, the list refreshes via **the view's `.onAppear` with an already-loaded guard** — `onAppear` fires again on every return to a screen, and the guard keeps the first load's skeleton/`LoadingView` path untouched:
+
+```swift
+func reloadOnReturn() {
+    guard users.state.value != nil else { return }   // first load owns .task
+    users.load { try await self.fetchUsers.execute() }
+}
+// in the View: .onAppear { viewModel.reloadOnReturn() }
+```
 
 ## Notes
 
