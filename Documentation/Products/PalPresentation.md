@@ -142,7 +142,7 @@ func reloadOnReturn() {
 
 ## Notes
 
-- Channel split: **LOAD** failures → `ViewState` (full error or banner over stale data); **ACTION** failures (screen keeps its data) → `.appAlert` (DesignSystem).
+- Channel split: **LOAD** failures → `ViewState` (full error or banner over stale data); **ACTION** failures (screen keeps its data) → `.appAlert` (DesignSystem). A ViewModel owning `alert: AppAlert?` / `toast: AppToast?` imports PalDesignSystem for exactly that — the **blessed shape** (layer rule 10).
 - Default strings for `PresentableError` ship localized (en + el); override per error as needed.
 
 See also: [PalDesignSystem](PalDesignSystem.md) (renders these states) · [Architecture](../ARCHITECTURE.md)

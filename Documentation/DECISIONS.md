@@ -72,7 +72,7 @@ Rules:
 7. No magic numbers in UI — theme tokens for spacing/radii where DesignSystem is used.
 8. **One primary type per file**, named after it — a protocol may be co-located with its single conforming implementation (e.g. `FetchUsersUseCaseProtocol` + `FetchUsersUseCase` in `FetchUsersUseCase.swift`). Extensions as `Type+Feature.swift`.
 9. Explicit access control; smallest public surface.
-10. Layer rules: Views never touch clients/repos; ViewModels import Domain only; DTO↔entity mapping lives in Data; dependency arrows point inward.
+10. Layer rules: Views never touch clients/repos; ViewModels import Domain + PalPresentation — plus PalDesignSystem **solely to own `AppAlert`/`AppToast` state** (ruled 2026-07-07: the ACTION-channel values are ViewModel state by design and the import is the blessed shape — moving the types behind typealiases would trip both the `api-stability` gate and `MemberImportVisibility` apps; the chrome stays in Views); DTO↔entity mapping lives in Data; dependency arrows point inward.
 11. Swift 6 hygiene: no `@unchecked Sendable` without written justification; `@MainActor` ViewModels; actors for shared mutable state.
 12. Errors are never silently swallowed; mapped at boundaries (`NetworkError` → domain error → `PresentableError`); cancellation never surfaces to users.
 13. **Reference types are `final` by default** — every class is `final` unless explicitly designed for subclassing (enables static dispatch, signals intent). Structs, enums, and actors need no annotation.
@@ -176,6 +176,7 @@ Rules:
 - **API switcher:** `APIEnvironment` = app-defined payload (name + baseURL + whatever the app bundles: OAuth creds, extra URLs) — a switch swaps the whole config atomically. DebugKit lists/persists selection (typed `DefaultsKey`); the APP supplies the apply hook. Switch sequence: cancel in-flight first → swap → broadcast one "environment changed" event (`AsyncStream`) → each layer cleans itself (tokens, cache, navigation). No restart (baseURL provider closure reads current env per request). Custom/localhost entries supported.
 - **Mocks:** `MockInterceptor` short-circuits the chain with stubbed `NetworkResponse`. Registry in memory, persisted as one JSON blob (Defaults helper), loaded once. Matching = method + path with query-normalization rules (never exact-URL equality). Capture→mock UX: toggle a logged call, **body auto-seeded from the captured response**, status editable; custom status honored WITH body (non-2xx surfaces as `unacceptableStatus`). Mocked exchanges appear in Logs.
 - **Extensible from day one:** apps append custom tabs via the `@ViewBuilder` slot on `present(extraTabs:)` — no type-erased registry, honoring no-`AnyView`. Future modules (not v1): Flags viewer/overrides, Saved Logs export, language override, version spoofing.
+- **Offline apps (ruled 2026-07-07):** DebugKit is deliberately a **network** debug kit — its value is the Logs/API/Mocks triad, so the PalNetworking coupling stays. Fully-local apps skip the product and roll a small app-side `#if DEBUG` menu (a shake shell with no tools isn't worth extracting). Revisit only if several apps bring concrete offline tools.
 
 ## 17. Localization
 

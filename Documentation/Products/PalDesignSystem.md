@@ -130,6 +130,8 @@ alert = .error(presentableError)
 
 Declare case-specific alerts as static factories on `AppAlert`. For bespoke content, use the overload `.appAlert($item) { item in CustomContent(item) }` — the foundation owns the chrome (dim, card, animation, dismiss).
 
+**The ViewModel owns the alert/toast state** (`var alert: AppAlert?`), and importing PalDesignSystem for that is the blessed shape — layer rule 10 sanctions it explicitly. The purist alternative (VM exposes `PresentableError?`, the View maps it) remains valid but is not required.
+
 **Known limitation:** a root-level overlay does not render above an active `.sheet` — apply `.appAlert` per presentation context.
 
 ## Toasts (non-blocking confirmations)
