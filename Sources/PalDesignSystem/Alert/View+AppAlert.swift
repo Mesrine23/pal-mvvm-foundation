@@ -41,7 +41,7 @@ private struct AppAlertChromeModifier<Item: Identifiable, AlertContent: View>: V
                     alertContent(item)
                         .padding(theme.spacing.l)
                         .frame(maxWidth: Self.cardMaxWidth)
-                        .background(theme.colors.surface, in: RoundedRectangle(cornerRadius: theme.radii.l))
+                        .background(theme.colors.surfaceElevated, in: RoundedRectangle(cornerRadius: theme.radii.l))
                         .padding(theme.spacing.l)
                         .accessibilityAddTraits(.isModal)
                 }

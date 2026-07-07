@@ -45,7 +45,7 @@ private struct ToastCard: View {
             Spacer(minLength: 0)
         }
         .padding(theme.spacing.m)
-        .background(theme.colors.surface, in: RoundedRectangle(cornerRadius: theme.radii.m))
+        .background(theme.colors.surfaceElevated, in: RoundedRectangle(cornerRadius: theme.radii.m))
         .shadow(theme.shadows.level2)
         .padding(.horizontal, theme.spacing.m)
         .padding(.bottom, theme.spacing.s)
