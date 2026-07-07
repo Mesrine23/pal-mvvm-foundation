@@ -138,6 +138,7 @@ Rule of thumb: *modal edits the presenting screen's state → view-level; modal 
 
 - Ownership: the app shell holds the root coordinator (`@State`) → the coordinator owns its `Router` → `RouterView` **receives** it (never creates it).
 - Route payloads are entities (not IDs); that is deliberate and trades away state-restoration friendliness.
+- **When the destination can edit its payload's entity, treat the payload as a seed:** the destination ViewModel copies it into its own state at `init` and replaces it after successful saves — the route value is just the initial snapshot. (The ID-in-route + re-fetch variant remains the alternative when staleness matters more broadly.)
 - Composition: one `Router` per tab; cross-feature navigation via an app-level enum wrapping feature routes (`AppRoute.users(UsersRoute)`).
 
 See also: [Architecture](../ARCHITECTURE.md) · [Getting Started](../GettingStarted.md)

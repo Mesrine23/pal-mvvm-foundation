@@ -4,7 +4,7 @@ Opt-in theming plus the SwiftUI building blocks that render the foundation's sta
 
 ## Overview
 
-``Theme`` is a deliberate minimal bridge: apps with a rich design system keep their own token layer and map a subset in. The state components render `ViewState` cases; the ACTION channel splits into interrupting alerts (``AppAlert``) and non-blocking confirmations (``AppToast``). View-modifier utilities (`.textStyle`, `.skeleton`, `.shimmering`, `.appAlert`, `.appToast`, scroll observation, `hideKeyboard`, `onFirstAppear`) appear under SwiftUI's `View` in this reference.
+``Theme`` is a deliberate minimal bridge: apps with a rich design system keep their own token layer and map a subset in. The state components render `ViewState` cases; the ACTION channel splits into interrupting alerts (``AppAlert``) and non-blocking confirmations (``AppToast``). View-modifier utilities (`.textStyle`, `.skeleton`, `.shimmering`, `.appAlert`, `.appToast`, scroll observation, `hideKeyboard`, `onFirstAppear`) and the `Color(hex:)` initializers appear under SwiftUI's `View` and `Color` in this reference.
 
 For the narrative guide, see the repository's `Documentation/Products/PalDesignSystem.md`.
 
@@ -27,6 +27,10 @@ For the narrative guide, see the repository's `Documentation/Products/PalDesignS
 - ``ErrorView``
 - ``SectionErrorView``
 - ``EmptyStateView``
+
+### Layout
+
+- ``FlowLayout``
 
 ### Alerts & toasts (the ACTION channel)
 

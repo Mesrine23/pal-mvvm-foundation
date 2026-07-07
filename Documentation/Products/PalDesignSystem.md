@@ -32,7 +32,9 @@ var theme = Theme.system
 theme.colors.accent = .pink
 ```
 
-Slots: `colors` (`background`, `surface`, `textPrimary`, `textSecondary`, `accent`, `success`, `warning`, `danger`, `separator`), `typography` (`largeTitle`/`title`/`headline`/`body`/`caption`), `spacing` (`xs…xl`), `radii` (`s`/`m`/`l`), `shadows` (`level1`/`level2`).
+Slots: `colors` (`background`, `surface`, `surfaceElevated`, `textPrimary`, `textSecondary`, `accent`, `success`, `warning`, `danger`, `separator`), `typography` (`largeTitle`/`title`/`headline`/`body`/`caption`), `spacing` (`xs…xl`), `radii` (`s`/`m`/`l`), `shadows` (`level1`/`level2`).
+
+`surfaceElevated` is the tone for floating chrome (sheets, alerts, toasts) one level above `surface`; it **defaults to `surface`**, so themes that don't distinguish the two change nothing. Design-tool hex values map directly: `Color(hex: 0xF3F1EC)` (compile-checked) or `Color(hex: "#F3F1EC")` (failable, accepts `#RRGGBB`/`#RRGGBBAA`).
 
 ## Text styles
 
@@ -48,18 +50,32 @@ extension TextStyleToken {
 }
 ```
 
-Apply `.textStyle` **last** (it returns `some View`, not `Text`).
+Apply `.textStyle` **last** (it returns `some View`, not `Text`). And note: **every file using `.textStyle` must `import PalDesignSystem` itself** — it's an extension, and importing another Pal product is not enough (the compiler error says "not available due to missing import").
 
 ## State components
 
 ```swift
 ErrorView(error) { viewModel.refresh() }       // full-screen PresentableError + Retry
 SectionErrorView(error) { viewModel.reload() } // inline per-topic failure
-EmptyStateView(/* icon/title/message/action */)
+EmptyStateView(
+    systemImage: "person.slash",
+    title: String(localized: "No users"),
+    message: String(localized: "Nothing to show yet."),   // optional
+    actionTitle: String(localized: "Reload"),             // optional
+    action: { viewModel.reload() }                        // optional
+)
 LoadingView(message: "Loading…")
 ```
 
 These render the `ViewState` cases (see [PalPresentation](PalPresentation.md)); accessibility labels on actions are built in.
+
+For wrapping chip/tag rows there's **`FlowLayout`** — a `Layout` that flows subviews left-to-right and breaks rows when the width runs out:
+
+```swift
+FlowLayout(horizontalSpacing: 8, verticalSpacing: 8) {
+    ForEach(tags) { TagChip($0) }
+}
+```
 
 ## Skeletons & shimmer
 
