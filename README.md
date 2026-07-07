@@ -32,6 +32,7 @@ In Xcode: **File ▸ Add Package Dependencies…**, paste the repo URL, pin a ve
 - **[Architecture](Documentation/ARCHITECTURE.md)** — layers, the dependency DAG, patterns, adoption notes.
 - **[Per-product guides](Documentation/Products/)** — the API and usage of each product.
 - **[Design decisions](Documentation/DECISIONS.md)** — why Pal is shaped the way it is.
+- **[Changelog](CHANGELOG.md)** — what each release added.
 - **[Contributing](CONTRIBUTING.md)** — build/verify, the binding conventions, and the deviations log.
 
 ## Develop

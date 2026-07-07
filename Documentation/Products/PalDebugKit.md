@@ -69,6 +69,7 @@ Full opt-out is absolute: an app that never links PalDebugKit has zero footprint
 - Mock bodies seed from the captured **preview** (capped ~20 KB) — a very large response seeds a truncated stub; paste the full body if you need it.
 - Shake rides the UIKit responder chain — while a text field has the keyboard up, the shake may not reach the detector; dismiss the keyboard first.
 - The debug menu UI is developer-facing and intentionally **not localized** (unlike PalDesignSystem/PalPresentation).
+- **Fully-local apps: skip this product** — it is deliberately network-centric (the Logs/API/Mocks triad is its value). A small app-side `#if DEBUG` settings section covers local debug needs (seeding, state resets).
 - **Not in v1** (additive later): Flags viewer/overrides, Saved Logs export, language override, version spoofing.
 
 See also: [Architecture](../ARCHITECTURE.md) · [PalNetworking](PalNetworking.md) · [Getting Started](../GettingStarted.md)
