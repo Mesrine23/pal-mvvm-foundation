@@ -4,18 +4,6 @@ import Testing
 
 private struct SampleError: Error {}
 
-/// Deterministically waits for a fire-and-forget `load`'s background Task to reach
-/// a state, instead of asserting after a fixed sleep. A fixed sleep races the
-/// runtime scheduler — a 40 ms wait passed on Swift 6.1 but lost the race on 6.3,
-/// so these tests poll the observable state until it settles (or a generous timeout).
-@MainActor
-private func waitUntil(timeout: Duration = .seconds(2), _ condition: () -> Bool) async {
-    let deadline = ContinuousClock().now + timeout
-    while !condition(), ContinuousClock().now < deadline {
-        try? await Task.sleep(for: .milliseconds(5))
-    }
-}
-
 /// Compile-guards the canonical GettingStarted VM shape: `load() async` drives `.task`
 /// via `performLoad` (the closure returns `Value`), `refresh()` drives the retry button via `load`.
 @MainActor @Observable

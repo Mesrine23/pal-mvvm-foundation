@@ -41,14 +41,12 @@ struct PagedLoaderTests {
         await loader.performLoad()
 
         loader.loadMore()
-        try await Task.sleep(for: .milliseconds(50))
-
+        await waitUntil { loader.state.value == [1, 2, 3, 4] }
         #expect(loader.state.value == [1, 2, 3, 4])
         #expect(loader.hasMore == false)
         #expect(loader.isLoadingMore == false)
 
-        loader.loadMore()
-        try await Task.sleep(for: .milliseconds(50))
+        loader.loadMore()   // hasMore == false → synchronous no-op
         #expect(loader.state.value == [1, 2, 3, 4])
     }
 
@@ -65,9 +63,9 @@ struct PagedLoaderTests {
         loader.loadMore()
         loader.loadMore()
         loader.loadMore()
-        try await Task.sleep(for: .milliseconds(150))
+        await waitUntil { loader.state.value?.count == 2 }   // wait for the single loadMore to finish
 
-        #expect(await spy.callCount == 2)
+        #expect(await spy.callCount == 2)   // performLoad + one loadMore; the other two deduped
     }
 
     @Test("loadMore no-ops before the first page has loaded")
@@ -78,8 +76,7 @@ struct PagedLoaderTests {
             return Page(items: [], nextCursor: nil)
         }
 
-        loader.loadMore()
-        try await Task.sleep(for: .milliseconds(30))
+        loader.loadMore()   // no first page yet → synchronous no-op (never starts the operation)
 
         #expect(await spy.callCount == 0)
         #expect(loader.state.value == nil)
@@ -96,14 +93,14 @@ struct PagedLoaderTests {
         await loader.performLoad()
 
         loader.loadMore()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitUntil { loader.loadMoreError != nil }
         #expect(loader.state.value == [1])
         #expect(loader.loadMoreError != nil)
         #expect(loader.isLoadingMore == false)
 
         shouldFail.value = false
         loader.loadMore()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitUntil { loader.state.value == [1, 2] }
         #expect(loader.loadMoreError == nil)
         #expect(loader.state.value == [1, 2])
     }
@@ -118,16 +115,16 @@ struct PagedLoaderTests {
         }
         await loader.performLoad()
         loader.loadMore()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitUntil { loader.state.value == [1, 99] }
         #expect(loader.state.value == [1, 99])
 
         let refreshTask = Task { await loader.refresh() }
-        #expect(loader.state.isLoading == false)
+        #expect(loader.state.isLoading == false)   // refresh never enters .loading
         await refreshTask.value
 
         #expect(loader.state.value == [1])
         loader.loadMore()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitUntil { loader.state.value == [1, 99] }
         #expect(await spy.received == [nil, 2, nil, 2])
     }
 
@@ -145,7 +142,7 @@ struct PagedLoaderTests {
 
         loader.load()
         loader.load()
-        try await Task.sleep(for: .milliseconds(220))
+        await waitUntil { loader.state.value == ["fast"] }
 
         #expect(loader.state.value == ["fast"])
     }
