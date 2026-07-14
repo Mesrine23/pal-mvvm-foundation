@@ -2,7 +2,14 @@
 
 Consumer-facing changes per release, newest first — **the** place for users and agents to catch up on what's landed. Versions are git tags (SemVer; the compatibility policy lives in [CONTRIBUTING](CONTRIBUTING.md)); every entry also exists as a [GitHub Release](https://github.com/Mesrine23/pal-mvvm-foundation/releases). Full API docs: [hosted DocC reference](https://mesrine23.github.io/pal-mvvm-foundation/).
 
+## [1.4.1] — 2026-07-07
+
+### Documentation
+- Editorial pass on the release notes and deviations log. No API or behavior change.
+
 ## [1.4.0] — 2026-07-07
+
+An adoption-feedback batch.
 
 ### Added
 - `ThemeColors.surfaceElevated` — the tone for floating chrome (sheets, alerts, toasts) one level above `surface`; **defaults to `surface`** so existing themes render identically. The alert and toast cards now draw from it.
