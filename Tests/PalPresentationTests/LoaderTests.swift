@@ -4,6 +4,18 @@ import Testing
 
 private struct SampleError: Error {}
 
+/// Deterministically waits for a fire-and-forget `load`'s background Task to reach
+/// a state, instead of asserting after a fixed sleep. A fixed sleep races the
+/// runtime scheduler — a 40 ms wait passed on Swift 6.1 but lost the race on 6.3,
+/// so these tests poll the observable state until it settles (or a generous timeout).
+@MainActor
+private func waitUntil(timeout: Duration = .seconds(2), _ condition: () -> Bool) async {
+    let deadline = ContinuousClock().now + timeout
+    while !condition(), ContinuousClock().now < deadline {
+        try? await Task.sleep(for: .milliseconds(5))
+    }
+}
+
 /// Compile-guards the canonical GettingStarted VM shape: `load() async` drives `.task`
 /// via `performLoad` (the closure returns `Value`), `refresh()` drives the retry button via `load`.
 @MainActor @Observable
@@ -20,52 +32,55 @@ private final class ReferenceListViewModel {
 struct LoaderTests {
 
     @Test("Successful load reaches .loaded")
-    func loadedOnSuccess() async throws {
+    func loadedOnSuccess() async {
         let loader = Loader<Int>()
         loader.load { 42 }
-        try await Task.sleep(for: .milliseconds(50))
+        await waitUntil { loader.state.value == 42 }
         #expect(loader.state.value == 42)
     }
 
     @Test("Failed load maps to .failed with a presentable error")
-    func failedOnError() async throws {
+    func failedOnError() async {
         let loader = Loader<Int>()
         loader.load { throw SampleError() }
-        try await Task.sleep(for: .milliseconds(50))
+        await waitUntil { loader.state.error != nil }
         #expect(loader.state.error != nil)
     }
 
     @Test("Loading keeps the previous value")
-    func keepsPreviousValueWhileLoading() async throws {
+    func keepsPreviousValueWhileLoading() async {
         let loader = Loader<String>()
-        loader.load { "first" }
-        try await Task.sleep(for: .milliseconds(40))
+        await loader.performLoad { "first" }          // awaited: deterministically .loaded
         #expect(loader.state.value == "first")
 
-        loader.load { try await Task.sleep(for: .milliseconds(100)); return "second" }
+        // load(_:) sets `.loading(previous:)` synchronously at the call site,
+        // so the re-trigger transition is race-free — no sleep needed.
+        loader.load { try await Task.sleep(for: .seconds(1)); return "second" }
         guard case .loading(let previous) = loader.state else {
             Issue.record("Expected .loading after re-trigger, got \(loader.state)")
             return
         }
         #expect(previous == "first")
+        loader.cancel()
     }
 
     @Test("Re-triggering cancels the previous in-flight load (no late overwrite)")
-    func reTriggerCancelsPrevious() async throws {
+    func reTriggerCancelsPrevious() async {
         let loader = Loader<String>()
-        loader.load { try await Task.sleep(for: .milliseconds(120)); return "slow" }
-        loader.load { "fast" }
-        try await Task.sleep(for: .milliseconds(220))
+        loader.load { try await Task.sleep(for: .seconds(1)); return "slow" }   // stays in-flight
+        loader.load { "fast" }                                                  // supersedes + cancels "slow"
+        await waitUntil { loader.state.value == "fast" }
         #expect(loader.state.value == "fast")
     }
 
     @Test("Canonical VM-holds-Loader pattern compiles and loads")
-    func referencePatternCompilesAndLoads() async throws {
+    func referencePatternCompilesAndLoads() async {
         let viewModel = ReferenceListViewModel(fetch: { [1, 2, 3] })
         await viewModel.load()
         #expect(viewModel.items.state.value == [1, 2, 3])
-        viewModel.refresh()
-        try await Task.sleep(for: .milliseconds(50))
+
+        viewModel.refresh()   // fire-and-forget load via the retry button
+        await waitUntil { if case .loaded = viewModel.items.state { true } else { false } }
         #expect(viewModel.items.state.value == [1, 2, 3])
     }
 
@@ -84,7 +99,7 @@ struct LoaderTests {
     }
 
     @Test("Refresh keeps the previous value on failure")
-    func refreshKeepsPreviousOnFailure() async throws {
+    func refreshKeepsPreviousOnFailure() async {
         let loader = Loader<String>()
         await loader.performLoad { "first" }
         await loader.refresh { throw SampleError() }
