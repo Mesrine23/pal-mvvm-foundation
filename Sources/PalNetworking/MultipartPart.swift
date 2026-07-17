@@ -32,4 +32,22 @@ public struct MultipartPart: Sendable {
         self.mimeType = mimeType
         self.data = data
     }
+
+    /// A plain text field (`text/plain`, UTF-8).
+    /// - Parameters:
+    ///   - name: The form field name.
+    ///   - value: The field's text.
+    public static func text(name: String, value: String) -> MultipartPart {
+        MultipartPart(name: name, mimeType: "text/plain", data: Data(value.utf8))
+    }
+
+    /// A file part with an explicit filename and content type.
+    /// - Parameters:
+    ///   - name: The form field name.
+    ///   - filename: The filename reported to the server.
+    ///   - contentType: The file's MIME type.
+    ///   - data: The file's bytes.
+    public static func file(name: String, filename: String, contentType: String, data: Data) -> MultipartPart {
+        MultipartPart(name: name, filename: filename, mimeType: contentType, data: data)
+    }
 }

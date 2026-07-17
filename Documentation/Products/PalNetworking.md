@@ -6,8 +6,9 @@
 
 ## What it gives you
 
-- **`Request<Response>`** — a generic value type; endpoints are one-line static factories.
-- **`NetworkClient` / `HTTPClient`** — `send(_:)` with **typed throws** (`NetworkError`).
+- **`Request<Response>`** — a generic value type; endpoints are one-line static factories (query via `[URLQueryItem]` or ordered dictionary-literal syntax).
+- **`NetworkClient` / `HTTPClient`** — `send(_:)` with **typed throws** (`NetworkError`); `sendWithResponse(_:)` when the call site needs the status code or response headers too.
+- **Per-request options** — `timeout`, `maxRetries` (0 = never retry), `redirectPolicy` (`.follow`/`.deny`), `requiresAuth`, free-form `flags`.
 - **Interceptor onion** — composable middleware over `TransportRequest`; ships `Logging`, `Retry`, `Auth`.
 - **`TokenProvider`** — an actor doing single-flight 401 refresh (N concurrent 401s → exactly one refresh).
 - **Uploads** — multipart and file upload; raw `Data`/`String` responses bypass JSON decoding.
@@ -17,10 +18,12 @@
 | Symbol | Purpose |
 |---|---|
 | `Request<Response: Decodable & Sendable>` | method, path, query, headers, body, options. |
-| `HTTPBody` | `.json`, `.data(_:contentType:)`, `.multipart`, `.file(_:contentType:)`. |
-| `NetworkClient` | `func send<Response>(_:) async throws(NetworkError) -> Response`. |
+| `RequestOptions` | `requiresAuth`, `flags`, `timeout`, `maxRetries`, `redirectPolicy`. |
+| `RedirectPolicy` | `.follow` (default) or `.deny` — a denied 3xx surfaces as `unacceptableStatus` with `Location` readable. |
+| `HTTPBody` | `.json`, `.data(_:contentType:)`, `.multipart`, `.file(_:contentType:)`; `MultipartPart.text(…)`/`.file(…)` factories. |
+| `NetworkClient` | `send(_:)` → decoded value; `sendWithResponse(_:)` → value + `NetworkResponse` (status, headers). |
 | `HTTPClient` | Concrete client (immutable, `Sendable`); injectable session + decoder/encoder. |
-| `NetworkError` | `invalidRequest`, `transport(URLError)`, `unacceptableStatus(code:data:)`, `decoding`, `cancelled`. |
+| `NetworkError` | `invalidRequest`, `transport(URLError)`, `unacceptableStatus(code:data:headers:)`, `decoding`, `cancelled`; accessors `statusCode`, `urlError`, `responseHeaders`, `retryAfter`. |
 | `Interceptor` / `Next` | `intercept(_:next:)`; mutate, retry, inspect, or short-circuit. |
 | `TokenProvider` | `actor` — `currentToken()`, `refresh()`; emits `AuthEvent`. |
 | `TokenStore` / `TokenRefreshService` | Storage + refresh seams (app/PalAuth supply impls). |
@@ -65,7 +68,26 @@ do {
 }
 ```
 
-Channel rule: client throws `NetworkError` → repository maps to a **domain error** → presentation maps to `PresentableError`. `.cancelled` is never surfaced. `error.isRetriable` drives `RetryInterceptor` (transport failures + 5xx/429).
+Channel rule: client throws `NetworkError` → repository maps to a **domain error** → presentation maps to `PresentableError`. `.cancelled` is never surfaced. `error.isRetriable` drives `RetryInterceptor`: transient transport failures, 5xx, and 429 — whose `Retry-After` hint (integer-seconds form) replaces the exponential backoff, capped at 30 s. Error responses carry their headers (`error.responseHeaders`), so rate-limit and `Location` headers are readable at the call site.
+
+## Per-request options & response metadata
+
+```swift
+// A type-ahead search with its own deadline, never retried:
+Request<SearchDTO>(
+    path: "/search",
+    query: ["q": text, "limit": "20"],           // ordered dictionary-literal syntax
+    options: RequestOptions(timeout: .seconds(5), maxRetries: 0)
+)
+
+// Read the status/headers when they matter (ETag, Location, rate limits):
+let (user, response) = try await client.sendWithResponse(.user(id: 1))
+let etag = response.headers["ETag"]
+
+// Surface a redirect instead of following it:
+let request = Request<EmptyResponse>(path: "/moved", options: RequestOptions(redirectPolicy: .deny))
+// -> unacceptableStatus(3xx, …) with error.responseHeaders?["Location"]
+```
 
 ## Auth refresh (single-flight)
 
@@ -114,9 +136,13 @@ for await status in reachability.statusUpdates { … }
 ## Notes
 
 - Interceptors are **HTTP-level** (raw bytes); typed decoding happens in `send` after the chain.
-- The chain currency is `TransportRequest { urlRequest, options }` so per-request flags (`requiresAuth`, custom `flags`) reach interceptors.
-- `LoggingInterceptor` redacts auth headers always; logs bodies only at `.debug`; uses `privacy: .private` for dynamics.
+- The chain currency is `TransportRequest { urlRequest, options }` so per-request flags (`requiresAuth`, `timeout`, `maxRetries`, `redirectPolicy`, custom `flags`) reach interceptors.
+- `LoggingInterceptor` redacts auth headers always; logs bodies only at `.debug`; uses `privacy: .private` for dynamics. `NetworkError`'s `description` is redaction-safe by construction (never header values), so logging a caught error can't leak.
 - `EmptyResponse` accepts empty bodies; `Data`/`String` responses skip JSON decoding (files/PDFs).
+- Query values are emitted form-urlencoded-safe: a literal `+` goes out as `%2B`, so servers that read `+` as a space (virtually all of them) receive the exact value.
+- Redirects are **followed transparently by default** (`URLSession` behavior); opt out per request with `redirectPolicy: .deny` to see the 3xx yourself.
+- `.multipart` assembles the whole body **in memory** — fine for form-sized payloads; for large binaries prefer `.file(_:contentType:)`, which streams from disk via an upload task.
+- `URLSession` may transparently retry a dropped connection before PalNetworking sees the failure, so servers can log more physical attempts than `RetryInterceptor`'s cap — the cap governs logical attempts.
 - The `baseURLProvider` init resolves the base URL per request — the seam behind [PalDebugKit](PalDebugKit.md)'s environment switcher.
 
 See also: [Architecture](../ARCHITECTURE.md) · [PalAuth](PalAuth.md)

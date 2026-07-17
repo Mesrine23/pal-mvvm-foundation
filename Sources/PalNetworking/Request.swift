@@ -59,4 +59,35 @@ public struct Request<Response: Decodable & Sendable>: Sendable {
         self.body = body
         self.options = options
     }
+
+    /// Creates a typed request with dictionary-literal query syntax. Order is
+    /// preserved (`KeyValuePairs`, unlike `Dictionary`), so requests stay
+    /// byte-deterministic:
+    /// ```swift
+    /// Request<SearchDTO>(path: "/search", query: ["q": text, "limit": "20"])
+    /// ```
+    /// - Parameters:
+    ///   - method: The HTTP method. Defaults to `.get`.
+    ///   - path: The path appended to the client's base URL.
+    ///   - query: Query pairs in literal order.
+    ///   - headers: Additional headers. Defaults to empty.
+    ///   - body: The payload. Defaults to `nil`.
+    ///   - options: Per-request flags. Defaults to the standard options.
+    public init(
+        method: HTTPMethod = .get,
+        path: String,
+        query: KeyValuePairs<String, String>,
+        headers: [String: String] = [:],
+        body: HTTPBody? = nil,
+        options: RequestOptions = RequestOptions()
+    ) {
+        self.init(
+            method: method,
+            path: path,
+            query: query.map { URLQueryItem(name: $0.key, value: $0.value) },
+            headers: headers,
+            body: body,
+            options: options
+        )
+    }
 }

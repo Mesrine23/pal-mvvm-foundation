@@ -21,7 +21,7 @@ struct MockInterceptor: Interceptor {
             return try await next(request)
         }
         guard (200...299).contains(mock.statusCode) else {
-            throw NetworkError.unacceptableStatus(code: mock.statusCode, data: mock.body)
+            throw NetworkError.unacceptableStatus(code: mock.statusCode, data: mock.body, headers: mock.headers)
         }
         return NetworkResponse(statusCode: mock.statusCode, headers: mock.headers, data: mock.body)
     }

@@ -61,10 +61,16 @@ public final class HTTPClient: NetworkClient {
     }
 
     public func send<Response>(_ request: Request<Response>) async throws(NetworkError) -> Response {
+        try await sendWithResponse(request).value
+    }
+
+    public func sendWithResponse<Response>(
+        _ request: Request<Response>
+    ) async throws(NetworkError) -> (value: Response, response: NetworkResponse) {
         let transportRequest = try makeTransportRequest(from: request)
         let chain = InterceptorChain(interceptors: interceptors, transport: Self.makeTransport(session: session))
         let response = try await chain.execute(transportRequest)
-        return try decode(response.data)
+        return (try decode(response.data), response)
     }
 
     // MARK: - Request building
@@ -78,6 +84,9 @@ public final class HTTPClient: NetworkClient {
 
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = request.method.rawValue
+        if let timeout = request.options.timeout {
+            urlRequest.timeoutInterval = Self.timeInterval(from: timeout)
+        }
         for (field, value) in request.headers {
             urlRequest.setValue(value, forHTTPHeaderField: field)
         }
@@ -112,7 +121,18 @@ public final class HTTPClient: NetworkClient {
         guard !query.isEmpty else { return url }
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
         components.queryItems = (components.queryItems ?? []) + query
+        // RFC 3986 permits a literal `+` in queries, so URLComponents leaves it —
+        // but real-world servers decode queries as form-urlencoded, where `+`
+        // means space. Emit `%2B` so `a+b` survives the wire (idempotent: an
+        // already-encoded plus is `%2B` and contains no literal `+`).
+        components.percentEncodedQuery = components.percentEncodedQuery?
+            .replacingOccurrences(of: "+", with: "%2B")
         return components.url
+    }
+
+    private static func timeInterval(from duration: Duration) -> TimeInterval {
+        let components = duration.components
+        return TimeInterval(components.seconds) + TimeInterval(components.attoseconds) / 1e18
     }
 
     private func setContentTypeIfMissing(_ contentType: String, on urlRequest: inout URLRequest) {
@@ -143,11 +163,12 @@ public final class HTTPClient: NetworkClient {
         { request throws(NetworkError) in
             let data: Data
             let urlResponse: URLResponse
+            let delegate: URLSessionTaskDelegate? = request.options.redirectPolicy == .deny ? RedirectDenier() : nil
             do {
                 if let fileURL = request.options.uploadFileURL {
-                    (data, urlResponse) = try await session.upload(for: request.urlRequest, fromFile: fileURL)
+                    (data, urlResponse) = try await session.upload(for: request.urlRequest, fromFile: fileURL, delegate: delegate)
                 } else {
-                    (data, urlResponse) = try await session.data(for: request.urlRequest)
+                    (data, urlResponse) = try await session.data(for: request.urlRequest, delegate: delegate)
                 }
             } catch let urlError as URLError where urlError.code == .cancelled {
                 throw NetworkError.cancelled
@@ -162,15 +183,14 @@ public final class HTTPClient: NetworkClient {
             guard let http = urlResponse as? HTTPURLResponse else {
                 throw NetworkError.transport(URLError(.badServerResponse))
             }
-            guard (200...299).contains(http.statusCode) else {
-                throw NetworkError.unacceptableStatus(code: http.statusCode, data: data)
-            }
-
             var headers: [String: String] = [:]
             for (field, value) in http.allHeaderFields {
                 if let field = field as? String, let value = value as? String {
                     headers[field] = value
                 }
+            }
+            guard (200...299).contains(http.statusCode) else {
+                throw NetworkError.unacceptableStatus(code: http.statusCode, data: data, headers: headers)
             }
             return NetworkResponse(statusCode: http.statusCode, headers: headers, data: data)
         }
