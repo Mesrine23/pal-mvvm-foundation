@@ -84,7 +84,7 @@ Tests today: smoke + MemoryCache + TokenProvider single-flight + interceptor-cha
 | Reachability (`NWPathMonitor` seam) | PalNetworking | ✅ | `v1.3.0` |
 | `BiometricAuthenticator` | PalAuth | ✅ | `v1.3.0` |
 | Adoption feedback: `surfaceElevated` slot · `Color(hex:)` · `FlowLayout` + docs batch (editor pattern, optional-content idiom, reload-on-return, local-app recipe) | PalDesignSystem/docs | ✅ | `v1.4.0` |
-| Networking hardening: `+` query fix · error-response headers + 429/`Retry-After` · per-request `timeout`/`maxRetries`/`redirectPolicy` · `sendWithResponse` · `NetworkError` accessors + redacted description · `KeyValuePairs` query init · `MultipartPart` factories · `PagedLoader.performLoadMore` · `Loader.reset` | PalNetworking/PalPresentation | 🔄 branch | `v1.5.0` |
+| Networking hardening: `+` query fix · error-response headers + 429/`Retry-After` · per-request `timeout`/`maxRetries`/`redirectPolicy` · `sendWithResponse` · `NetworkError` accessors + redacted description · `KeyValuePairs` query init · `MultipartPart` factories · `PagedLoader.performLoadMore` · `Loader.reset` | PalNetworking/PalPresentation | ✅ | `v1.5.0` |
 
 Parked (owner hold / no verdict): keyboard utilities beyond `hideKeyboard()` · PalTestSupport + broad tests (Phase 11) · DocC · a networked second test app. Declined for now: DebugKit round 2 (flags tab, log export, per-client custom envs).
 
@@ -99,6 +99,8 @@ Parked (owner hold / no verdict): keyboard utilities beyond `hideKeyboard()` · 
 > **`v1.4.0` shipped** (2026-07-07): an adoption-feedback batch — `surfaceElevated` theme slot (adopted by alert/toast chrome, defaults to `surface`), `Color(hex:)`, `FlowLayout`, plus the ergonomics docs (editor-screen pattern, optional-content idiom, reload-on-return, fully-local recipe, `PresentableError(from:)` surfaced). Additive-only, tool-verified against `v1.3.1`.
 >
 > **`v1.4.1` shipped** (2026-07-07): documentation-only — editorial pass on the release notes and deviations log. No API or behavior change.
+>
+> **`v1.5.0` shipped** (2026-07-18): networking hardening, driven by an end-to-end validation of PalNetworking against a purpose-built local mock backend. The `+`-query fix, error-response headers, 429/`Retry-After`, per-request `timeout`/`maxRetries`/`redirectPolicy`, `RedirectPolicy`, `sendWithResponse`, `NetworkError` accessors + redaction-safe description, `KeyValuePairs` query init, `MultipartPart` factories, `PagedLoader.performLoadMore`, and `Loader.reset`. **The first release to carry a deliberate source break in a MINOR** — `unacceptableStatus` gained `headers:` while PalNetworking has zero adopters (owner-ruled; see the deviations log). `diagnose-api-breaking-changes` against `v1.4.1` confirmed the ONLY breaks are the two intended ones (the enum case + the in-place `RequestOptions.init` extension); every other product clean. Both toolchain edges green.
 
 ## Deviations log
 

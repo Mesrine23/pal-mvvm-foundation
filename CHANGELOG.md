@@ -2,7 +2,7 @@
 
 Consumer-facing changes per release, newest first — **the** place for users and agents to catch up on what's landed. Versions are git tags (SemVer; the compatibility policy lives in [CONTRIBUTING](CONTRIBUTING.md)); every entry also exists as a [GitHub Release](https://github.com/Mesrine23/pal-mvvm-foundation/releases). Full API docs: [hosted DocC reference](https://mesrine23.github.io/pal-mvvm-foundation/).
 
-## [Unreleased] — targeting 1.5.0
+## [1.5.0] — 2026-07-18
 
 A networking-hardening batch, driven by an end-to-end validation of PalNetworking against a purpose-built local mock backend (every capability exercised through real HTTP, assertions journal-verified server-side).
 
