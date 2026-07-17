@@ -27,7 +27,7 @@ public struct AuthInterceptor: Interceptor {
         do {
             return try await next(authenticated)
         } catch {
-            guard case .unacceptableStatus(401, _) = error else {
+            guard case .unacceptableStatus(401, _, _) = error else {
                 throw error
             }
             guard let freshToken = try? await tokenProvider.refresh() else {

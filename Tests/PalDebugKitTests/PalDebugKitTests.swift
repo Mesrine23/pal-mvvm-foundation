@@ -79,7 +79,7 @@ import PalPersistence
         _ = try await interceptor.intercept(request, next: next)
         Issue.record("expected a thrown NetworkError")
     } catch {
-        guard case .unacceptableStatus(let code, _) = error else {
+        guard case .unacceptableStatus(let code, _, _) = error else {
             Issue.record("expected .unacceptableStatus, got \(error)")
             return
         }

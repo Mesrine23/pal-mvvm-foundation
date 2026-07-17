@@ -67,7 +67,7 @@ struct DebugInspectorInterceptor: Interceptor {
     }
 
     private static func statusCode(of error: NetworkError) -> Int? {
-        if case .unacceptableStatus(let code, _) = error { return code }
+        if case .unacceptableStatus(let code, _, _) = error { return code }
         return nil
     }
 }

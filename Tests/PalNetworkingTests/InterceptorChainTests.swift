@@ -138,7 +138,7 @@ struct InterceptorChainTests {
         let spy = TransportSpy()
         let transport: Next = { request throws(NetworkError) in
             _ = await spy.record(request)
-            throw NetworkError.unacceptableStatus(code: 400, data: Data())
+            throw NetworkError.unacceptableStatus(code: 400, data: Data(), headers: [:])
         }
         let chain = InterceptorChain(
             interceptors: [RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1))],
@@ -150,7 +150,7 @@ struct InterceptorChainTests {
             _ = try await chain.execute(request)
             Issue.record("Expected a 400 error")
         } catch {
-            guard case .unacceptableStatus(let code, _) = error else {
+            guard case .unacceptableStatus(let code, _, _) = error else {
                 Issue.record("Expected .unacceptableStatus, got \(error)")
                 return
             }
@@ -170,7 +170,7 @@ struct InterceptorChainTests {
         let transport: Next = { request throws(NetworkError) in
             let call = await spy.record(request)
             guard call > 1 else {
-                throw NetworkError.unacceptableStatus(code: 401, data: Data())
+                throw NetworkError.unacceptableStatus(code: 401, data: Data(), headers: [:])
             }
             return NetworkResponse(statusCode: 200)
         }

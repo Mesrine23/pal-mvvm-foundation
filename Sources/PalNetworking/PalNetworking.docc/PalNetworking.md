@@ -17,6 +17,7 @@ For the narrative guide, see the repository's `Documentation/Products/PalNetwork
 - ``HTTPBody``
 - ``MultipartPart``
 - ``RequestOptions``
+- ``RedirectPolicy``
 - ``EmptyResponse``
 
 ### Client

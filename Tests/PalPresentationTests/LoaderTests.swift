@@ -94,4 +94,28 @@ struct LoaderTests {
         #expect(loader.state.error != nil)
         #expect(loader.state.value == "first")
     }
+
+    @Test("reset returns to .idle and the cancelled work never lands")
+    func resetReturnsToIdle() async {
+        let loader = Loader<String>()
+        loader.load { try await Task.sleep(for: .seconds(1)); return "late" }
+        guard case .loading = loader.state else {
+            Issue.record("Expected .loading after load, got \(loader.state)")
+            return
+        }
+
+        loader.reset()
+
+        guard case .idle = loader.state else {
+            Issue.record("Expected .idle after reset, got \(loader.state)")
+            return
+        }
+        // The cancelled task's sleep throws immediately; give it a beat and
+        // prove no late overwrite arrives.
+        try? await Task.sleep(for: .milliseconds(50))
+        guard case .idle = loader.state else {
+            Issue.record("Cancelled work overwrote the reset state: \(loader.state)")
+            return
+        }
+    }
 }

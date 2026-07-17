@@ -46,7 +46,7 @@ case .failed(let error, previous: let value?): content(value)   // + banner over
 - **Swallows `CancellationError`** (cancellation never reaches the user).
 - Holds `self` weakly; `state` is `private(set)` (only the loader mutates it).
 
-Variants: `performLoad { } async` for `.task { }` (view-lifecycle cancellation); `refresh { } async` for `.refreshable { }` (reloads **in place** — no `.loading` transition, since the refresh control is already the spinner); and `cancel()` for manual control. Rule of thumb: **the runner owns re-trigger cancellation; `.task` owns lifecycle cancellation.**
+Variants: `performLoad { } async` for `.task { }` (view-lifecycle cancellation); `refresh { } async` for `.refreshable { }` (reloads **in place** — no `.loading` transition, since the refresh control is already the spinner); `cancel()` for teardown (keeps the state — nobody is looking); and `reset()` for a **user-facing Cancel button** (cancels AND returns to `.idle`, so no spinner is stranded on a screen that stays visible). Rule of thumb: **the runner owns re-trigger cancellation; `.task` owns lifecycle cancellation.**
 
 ## Mapping your errors
 
@@ -89,7 +89,7 @@ final class PostsViewModel {
 
 - The operation is **injected at `init`** (deliberate asymmetry vs `Loader`): the loader re-invokes it with successive cursors — `nil` means first page; your `Page(items:nextCursor:)` supplies the next cursor (`nil` = the end, disarming `hasMore`).
 - First page = the familiar trio: `load()` / `performLoad()` (for `.task`) / `refresh()` (pull-to-refresh, no `.loading`, restarts from page one).
-- **`loadMore()`** appends the next page — fire-and-forget, self-deduping (no-ops while any fetch is in flight, before the first page, or after the last). Trigger it from the appearance of the **trailing footer row that sits outside the `ForEach`** — the canonical pattern, shown in [Getting Started](../GettingStarted.md).
+- **`loadMore()`** appends the next page — fire-and-forget, self-deduping (no-ops while any fetch is in flight, before the first page, or after the last). Trigger it from the appearance of the **trailing footer row that sits outside the `ForEach`** — the canonical pattern, shown in [Getting Started](../GettingStarted.md). **`performLoadMore() async`** is the awaitable sibling (same guards and transitions) for tests, tools, and prefetching flows that need to await completion instead of polling `isLoadingMore`.
 - **A failed load-more never touches the list**: items stay, `loadMoreError` drives an inline footer retry (which just calls `loadMore()` again — it clears the error). Only first-page failures go through `ViewState.failed`.
 - Footer contract: `isLoadingMore` → spinner · `loadMoreError` → retry · `hasMore == false` → nothing (or an end-of-list note).
 
