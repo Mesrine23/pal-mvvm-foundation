@@ -90,4 +90,13 @@ public final class Loader<Value: Sendable> {
         task?.cancel()
         task = nil
     }
+
+    /// Cancels any in-flight load and returns to `.idle` — the affordance behind
+    /// a user-facing Cancel button. ``cancel()`` alone leaves the state at
+    /// `.loading` (correct for view-lifecycle teardown, where nobody is looking),
+    /// which would strand a visible spinner when the screen stays on-screen.
+    public func reset() {
+        cancel()
+        state = .idle
+    }
 }

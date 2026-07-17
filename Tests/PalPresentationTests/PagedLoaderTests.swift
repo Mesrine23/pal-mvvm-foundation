@@ -141,6 +141,10 @@ struct PagedLoaderTests {
         }
 
         loader.load()
+        // Wait until the first task has claimed call 1 before re-triggering:
+        // task start order is unordered, so firing both loads back-to-back can
+        // hand the slow branch to the SECOND (uncancelled) load and flake.
+        await waitUntil { sequence.value >= 1 }
         loader.load()
         await waitUntil { loader.state.value == ["fast"] }
 
@@ -161,6 +165,58 @@ struct PagedLoaderTests {
 
         #expect(loader.state.error != nil)
         #expect(loader.state.value == [7])
+    }
+
+    @Test("performLoadMore awaits the append — no polling needed")
+    func performLoadMoreAppendsAwaitably() async {
+        let loader = PagedLoader<Int, Int> { cursor in
+            switch cursor {
+            case nil: Page(items: [1, 2], nextCursor: 2)
+            case 2:   Page(items: [3], nextCursor: nil)
+            default:  Page(items: [], nextCursor: nil)
+            }
+        }
+        await loader.performLoad()
+
+        await loader.performLoadMore()
+
+        #expect(loader.state.value == [1, 2, 3])
+        #expect(loader.hasMore == false)
+        #expect(loader.isLoadingMore == false)
+    }
+
+    @Test("performLoadMore respects the same guards as loadMore")
+    func performLoadMoreRespectsGuards() async {
+        let spy = CursorSpy()
+        let loader = PagedLoader<Int, Int> { cursor in
+            await spy.record(cursor)
+            return Page(items: [9], nextCursor: nil)
+        }
+
+        await loader.performLoadMore()          // before the first page → no-op
+        #expect(await spy.received.isEmpty)
+
+        await loader.performLoad()
+        await loader.performLoadMore()          // hasMore == false → no-op
+        #expect(await spy.received == [nil])
+    }
+
+    @Test("A failed performLoadMore keeps the items and sets the footer error")
+    func performLoadMoreFailureKeepsItems() async {
+        let shouldFail = LockedBox(false)
+        let loader = PagedLoader<Int, Int> { cursor in
+            if shouldFail.value { throw SampleError() }
+            return Page(items: [1], nextCursor: (cursor ?? 0) + 1)
+        }
+        await loader.performLoad()
+        shouldFail.value = true
+
+        await loader.performLoadMore()
+
+        #expect(loader.loadMoreError != nil)
+        #expect(loader.state.value == [1])
+        #expect(loader.hasMore)
+        #expect(loader.isLoadingMore == false)
     }
 }
 

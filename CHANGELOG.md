@@ -2,6 +2,29 @@
 
 Consumer-facing changes per release, newest first — **the** place for users and agents to catch up on what's landed. Versions are git tags (SemVer; the compatibility policy lives in [CONTRIBUTING](CONTRIBUTING.md)); every entry also exists as a [GitHub Release](https://github.com/Mesrine23/pal-mvvm-foundation/releases). Full API docs: [hosted DocC reference](https://mesrine23.github.io/pal-mvvm-foundation/).
 
+## [1.5.0] — 2026-07-18
+
+A networking-hardening batch, driven by an end-to-end validation of PalNetworking against a purpose-built local mock backend (every capability exercised through real HTTP, assertions journal-verified server-side).
+
+### Fixed
+- **Query values containing a literal `+` now reach servers intact.** `URLComponents` leaves `+` unencoded (legal per RFC 3986), but real-world servers decode queries as form-urlencoded where `+` means space — so `q=a+b` silently arrived as `a b`. `HTTPClient` now emits `%2B`.
+- A scheduling-order flake in the `PagedLoader` re-trigger test (the test assumed spawned tasks start in FIFO order).
+
+### Added
+- **`NetworkClient.sendWithResponse(_:)`** — the decoded value *plus* the `NetworkResponse` (status, headers) for call sites that need `ETag`, `Location`, or rate-limit headers; ships with a default implementation so existing conformances keep compiling.
+- **Per-request options** on `RequestOptions`: `timeout` (applied to `URLRequest.timeoutInterval`), `maxRetries` (overrides `RetryInterceptor`'s cap; `0` = never retry — non-idempotent POSTs), and `redirectPolicy`.
+- **`RedirectPolicy`** — `.follow` (default) or `.deny`, which surfaces the 3xx as `unacceptableStatus` with its `Location` header readable instead of following it.
+- **429 handling** — `isRetriable` now includes 429, and `RetryInterceptor` honors a `Retry-After` hint (integer-seconds form) in place of the exponential backoff, capped at 30 s.
+- **`NetworkError` accessors** — `statusCode`, `urlError`, `responseHeaders`, `retryAfter` — plus a redaction-safe `CustomStringConvertible` (header values never appear in `String(describing:)`, keeping error logs leak-free).
+- **`Request` dictionary-literal query initializer** (`KeyValuePairs` — order-preserving): `Request(path: "/search", query: ["q": text, "limit": "20"])`.
+- **`MultipartPart.text(name:value:)` / `.file(name:filename:contentType:data:)`** factories.
+- **`PagedLoader.performLoadMore()`** — the awaitable sibling of `loadMore()` for tests, tools, and prefetching.
+- **`Loader.reset()`** — cancel *and* return to `.idle`; the affordance behind a user-facing Cancel button (`cancel()` alone keeps the state, stranding a visible spinner).
+
+### Breaking (pre-adoption)
+- `NetworkError.unacceptableStatus(code:data:)` gained a third associated value: `headers: [String: String]`. Pattern matches need one more `_`. Shipped in a minor **deliberately**: PalNetworking has zero adopters today, so a major bump would version-tax an unused surface — recorded in the deviations log. The `api-stability` gate is expected red on this branch and re-baselines at the release tag.
+- `RequestOptions.init` was extended in place (new defaulted parameters) rather than duplicated — call sites are source-compatible; only the exact old signature is gone.
+
 ## [1.4.1] — 2026-07-07
 
 ### Documentation

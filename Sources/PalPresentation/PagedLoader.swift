@@ -84,25 +84,20 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
     /// another load-more is in flight, before the first page has loaded, and
     /// after the last page.
     public func loadMore() {
-        guard !isLoadingFirstPage, !isLoadingMore, hasMore, let current = state.value else { return }
-        isLoadingMore = true
-        loadMoreError = nil
+        guard let current = beginLoadMore() else { return }
         let cursor = nextCursor
-        loadMoreTask = Task { [weak self, operation] in
-            do {
-                let page = try await operation(cursor)
-                guard !Task.isCancelled, let self else { return }
-                self.state = .loaded(current + page.items)
-                self.nextCursor = page.nextCursor
-                self.hasMore = page.nextCursor != nil
-                self.isLoadingMore = false
-            } catch is CancellationError {
-            } catch {
-                guard !Task.isCancelled, let self else { return }
-                self.loadMoreError = PresentableError(from: error)
-                self.isLoadingMore = false
-            }
+        loadMoreTask = Task { [weak self] in
+            await self?.runLoadMore(from: current, cursor: cursor)
         }
+    }
+
+    /// The awaitable next-page variant, mirroring ``performLoad()``: same guards
+    /// and state transitions as ``loadMore()``, but callers await completion —
+    /// no polling of ``isLoadingMore`` in tests, tools, or prefetching flows.
+    /// Cancellation rides the caller's task (not ``cancel()``).
+    public func performLoadMore() async {
+        guard let current = beginLoadMore() else { return }
+        await runLoadMore(from: current, cursor: nextCursor)
     }
 
     /// Cancels any in-flight work without changing state.
@@ -121,6 +116,29 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
         isLoadingFirstPage = true
         isLoadingMore = false
         loadMoreError = nil
+    }
+
+    private func beginLoadMore() -> [Item]? {
+        guard !isLoadingFirstPage, !isLoadingMore, hasMore, let current = state.value else { return nil }
+        isLoadingMore = true
+        loadMoreError = nil
+        return current
+    }
+
+    private func runLoadMore(from current: [Item], cursor: Cursor?) async {
+        do {
+            let page = try await operation(cursor)
+            guard !Task.isCancelled else { return }
+            state = .loaded(current + page.items)
+            nextCursor = page.nextCursor
+            hasMore = page.nextCursor != nil
+            isLoadingMore = false
+        } catch is CancellationError {
+        } catch {
+            guard !Task.isCancelled else { return }
+            loadMoreError = PresentableError(from: error)
+            isLoadingMore = false
+        }
     }
 
     private func runFirstPage() async {
