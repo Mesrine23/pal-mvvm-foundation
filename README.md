@@ -23,7 +23,20 @@ A reusable, **zero-dependency** iOS foundation — one Swift Package, multiple f
 
 ## Install
 
-In Xcode: **File ▸ Add Package Dependencies…**, paste the repo URL, pin a version, and import the products you need. The full walkthrough — install → composition root → first feature — is in **[Getting Started](Documentation/GettingStarted.md)**.
+```swift
+// Xcode ▸ File ▸ Add Package Dependencies…, or in your own Package.swift:
+.package(url: "https://github.com/Mesrine23/pal-mvvm-foundation.git", from: "1.5.0"),
+```
+
+Import only the products you need — each declares its own dependencies, so you never link more than you ask for. **Pin a tag, never a branch**, and don't copy the sources into your project: SemVer is CI-enforced since `1.0.0`, so `from:` is safe and an upgrade is one number. The full walkthrough — install → composition root → first feature — is in **[Getting Started](Documentation/GettingStarted.md)**.
+
+### When you need something Pal doesn't do
+
+**It's a value → you don't touch Pal.** Base URLs, brand tokens, storage keys, analytics events, environments, validation rules, and every user-facing string are supplied *by the app* through typed keys, static factory extensions, and protocol conformances. That's the law above, and it's the answer most of the time — the [product guides](Documentation/Products/) show the seam for each one.
+
+**It's a mechanism → edit the foundation, in its own repo.** A pinned dependency is checked out **read-only** into DerivedData; edits there are untracked and vanish on the next resolve. [Updating the foundation while building your app](Documentation/GettingStarted.md#updating-the-foundation-while-building-your-app) covers the local-override loop (edit Pal and your app live in one Xcode window), the versioned-release loop, and the gotchas. Then [Contributing](CONTRIBUTING.md): branch off `develop`, keep `swift build` + `swift test` green, add a [CHANGELOG](CHANGELOG.md) entry, tag.
+
+**You need it today and can't wait for a release** → fork, add this repo as `upstream`, and merge tags periodically so you keep taking fixes.
 
 ## Documentation
 
