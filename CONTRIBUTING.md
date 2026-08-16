@@ -31,6 +31,11 @@ The naming conventions and the 12 clean-code rules in [DECISIONS.md §4–5](Doc
 - **`feature/{name}`** — branch off `develop`; merge back into `develop` when done.
 - **`hotfix/{name}`** — branch off `main` for an urgent fix; merge into **both** `main` (tag a patch, e.g. `v1.0.1`) **and** `develop` (so the next release doesn't revert it).
 - A release is `develop → main` plus a SemVer **tag**, a **[CHANGELOG.md](CHANGELOG.md) entry**, and a GitHub Release. **Consumers pin to tags, never to a branch.**
+- **Every CHANGELOG entry opens with an `Affects:` line** naming the products it touches (`Affects: documentation only` for a docs release). One tag versions all twelve products, so a consumer who imports two of them otherwise has to read the whole entry to learn it doesn't concern them. Start from the diff rather than from memory:
+  ```bash
+  git diff --name-only <last-tag>..HEAD -- Sources | grep '\.swift$' | cut -d/ -f2 | sort -u
+  ```
+  That's a **candidate** list — trim it to the products whose public API or behavior actually changed. Doc-comment fixes and in-repo call-site updates (e.g. pattern matches adjusted for a changed enum case elsewhere) show up in the diff but change nothing for a consumer of that product.
 - **Merge discipline:** push the `feature/*` (or `hotfix/*`) branch and **request review before merging** — don't self-merge into `develop`/`main` without a cross-check. *(Active from the Notifications feature onward.)*
 
 ## Compatibility & evolution
