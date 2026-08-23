@@ -8,7 +8,7 @@ Build the slice in this order. Each layer only knows the one inside it: **View â
 
 ## 1. Domain
 
-An entity plus one use case. If the app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, mark both `nonisolated` so they construct off the main actor.
+An entity plus one use case, both `nonisolated` under a main-actor-default app target (see `reference/ADOPTERS.md`).
 
 ```swift
 nonisolated struct Item: Identifiable, Hashable, Sendable { let id: Int; let title: String }
