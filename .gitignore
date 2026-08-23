@@ -64,6 +64,10 @@ fastlane/test_output
 # Swift Package Manager (Xcode-generated)
 .swiftpm/
 
+# xcodebuild without a scheme drops output here — never commit it
+build/
+
 # Agent instruction files are part of this repo (override any global ignore)
+# Applies at every level: root plus Sources/, Example/, Tests/, Documentation/
 !CLAUDE.md
 !AGENTS.md

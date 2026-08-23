@@ -8,7 +8,7 @@
 ## 1. Identity & goals
 
 - **Pal** is a reusable, state-of-the-art iOS foundation owned by Panagiotis "Pal" Palamidas.
-- Delivered as **one Swift Package with multiple library products**, consumed by apps via SPM. Apps are created normally in Xcode and add Pal as a dependency, pinned per app to a version/branch/commit.
+- Delivered as **one Swift Package with multiple library products**, consumed by apps via SPM. Apps are created normally in Xcode and add Pal as a dependency, pinned per app to a released tag.
 - The foundation ships **mechanisms**; apps ship **values** (concrete endpoints, strings, brand tokens, storage keys, analytics events, environments, validation rules). This law governs every API decision.
 - The in-repo `Example/` app (local path dependency) is the dogfooding host: previews, manual testing, demo of the canonical patterns.
 
@@ -64,7 +64,7 @@ Rules:
 ## 5. Clean-code rules (binding for ALL agents and humans)
 
 1. **No user-facing string literals in Views/ViewModels** — String Catalog keys via `String(localized:)`/generated symbols only.
-2. **No implementation comments** — self-documenting naming; sole exception: a genuinely non-obvious constraint/workaround, explaining WHY never WHAT. No commented-out code. `// MARK:` section dividers permitted. **`///` documentation comments are REQUIRED on every public symbol** (Quick Help/DocC). DocC catalog considered by 1.0.
+2. **No implementation comments** — self-documenting naming; sole exception: a genuinely non-obvious constraint/workaround, explaining WHY never WHAT. No commented-out code. `// MARK:` section dividers permitted. **`///` documentation comments are REQUIRED on every public symbol** (Quick Help/DocC).
 3. Binding naming conventions per §4.
 4. **No force-unwraps / `try!` / `as!`** — sole exception: DI resolution at the app's composition root (fail-fast by design).
 5. **No `print()`** — `LoggerFactory` only (opt-in). **Never log secrets:** Authorization/auth headers always redacted; request/response bodies at `.debug` level only; `privacy: .private` interpolation for dynamic values.
@@ -198,14 +198,13 @@ Rules:
 
 - **Live-edit while building an app:** app depends on Pal via Git URL pinned; to edit, drag the local Pal folder into the app's workspace (local override wins) → edit live → commit, push, tag → remove override → bump pin.
 - **`DEBUGKIT` recipe (per app):** add `DEBUGKIT` to `SWIFT_ACTIVE_COMPILATION_CONDITIONS` of each configuration that should carry tools; wrap `PalDebugTools.enable(…)` + Inspector/Mock interceptor wiring in `#if DEBUGKIT` at the composition root.
-- **Release:** SemVer **tags** on `main`; consumers pin to tags (never a branch).
-- **Source control (GitFlow):** `main` = live/consumer branch (tagged releases only) · `develop` = integration · `feature/{name}` off develop → back to develop · `hotfix/{name}` off main → merged to **both** main + develop (tag a patch). Contributors/agents push the `feature/*` branch and **request review before merging** (active from the Notifications feature onward).
-- **Compatibility & evolution (open to extension, closed to modification):** the public API is a contract for the apps on Pal — evolve **additively** (new types, parameters with defaults, protocol requirements **only with default impls**), **deprecate don't delete** (`@available(*, deprecated, renamed:)`, remove only at a major), and treat a new public enum `case` as breaking. SemVer mapping: additive → minor · fix → patch · breaking → major (with deprecations first); since `1.0.0`, `from:` pinning is safe for consumers. There is no consumer-tracked `release/*` branch (tags are the channel); a `release/*` branch, if ever used, is a short-lived hardening branch, and a `1.x` maintenance line exists only to backport across a major. **The `api-stability` CI gate runs `swift package diagnose-api-breaking-changes`** against the latest release tag and fails on a break (active since `v1.0.0`).
+- **Release, source control (GitFlow), and the compatibility/evolution policy** are contributor process, and live in **[CONTRIBUTING](../CONTRIBUTING.md)** — releases are SemVer tags on `main` and consumers pin tags, never a branch.
 
 ## 20. Checklists
 
-**Pre-app#1:** pagination pattern design · image strategy confirmation per app.
-**Resolved at `v1.0.0`:** versioning/deprecation policy defined (§19) · public API freeze review done (clean) · `diagnose-api-breaking-changes` CI gate active. **Post-1.0 backlog (all additive):** DocC catalog · broad test coverage + `PalTestSupport` (Phase 11) · a networked second test app. *(LICENSE: MIT.)*
+**Resolved at `v1.0.0`:** versioning/deprecation policy defined · public API freeze review done (clean) · `diagnose-api-breaking-changes` CI gate active. Shipped since: pagination (`PagedLoader`, `v1.1.0`) and the DocC catalogs (published on every release tag).
+
+**Post-1.0 backlog (all additive):** broad test coverage + `PalTestSupport` (Phase 11) · a networked second test app. Image strategy stays a per-app confirmation (§18).
 
 ## 21. PalNotifications (push + local)
 

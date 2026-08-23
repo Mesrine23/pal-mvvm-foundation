@@ -10,13 +10,32 @@ swift test         # smoke + targeted tests
 # Example app: open Example/PalExample.xcodeproj (or xcodebuild -project … -scheme PalExample)
 ```
 
-Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI enforces this on push/PR on **both toolchain edges** — `macos-15` (Xcode 16 / Swift 6.1, the consumer floor) and `macos-26` (latest) — plus the `api-stability` gate; the two-edge matrix exists because newer SDKs concurrency-annotate system frameworks, so one edge can pass where the other breaks (the `v1.3.1` lesson, in the deviations log). The macOS 14 platform floor exists only so the host can build/test; products target iOS — UIKit-only surfaces are gated with `#if canImport(UIKit)`.
+Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI enforces the package build and tests on push/PR on **both toolchain edges** — `macos-15` (Xcode 16 / Swift 6.1, the consumer floor) and `macos-26` (latest) — plus the `api-stability` gate; the Example app is verified locally. The two-edge matrix exists because newer SDKs concurrency-annotate system frameworks, so one edge can pass where the other breaks (the `v1.3.1` lesson, in the deviations log). The macOS 14 platform floor exists only so the host can build/test; products target iOS — UIKit-only surfaces are gated with `#if canImport(UIKit)`.
 
 **API reference docs are generated, not hand-written:** the `Docs` workflow builds DocC for all 12 products on every release tag (plugin-free `xcodebuild docbuild` — the package manifest stays zero-dependency) and publishes to [GitHub Pages](https://mesrine23.github.io/pal-mvvm-foundation/). Each product has a curated `Sources/<Target>/<Target>.docc` catalog: **when you add a public symbol, add it to the catalog's Topics** (an uncurated symbol still appears, just unorganized — visible decay, fix it in the same change).
 
 ## The rules are binding
 
-The naming conventions and the 12 clean-code rules in [DECISIONS.md §4–5](Documentation/DECISIONS.md) (mirrored in [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md)) are binding for humans and agents alike. Highlights worth re-reading before a PR: `///` on every public symbol · no force-unwraps/`AnyView`/`print` · scoped naming (foundation API uses standard Swift naming; the `…Protocol` suffix is app-layer only) · errors mapped at boundaries.
+The naming conventions and the 13 clean-code rules in [DECISIONS.md §4–5](Documentation/DECISIONS.md) (restated for agents in [AGENTS.md](AGENTS.md)) are binding for humans and agents alike. Highlights worth re-reading before a PR: `///` on every public symbol · no force-unwraps/`AnyView`/`print` · scoped naming (foundation API uses standard Swift naming; the `…Protocol` suffix is app-layer only) · errors mapped at boundaries.
+
+### Agent instructions
+
+[AGENTS.md](AGENTS.md) at the repository root is the canonical brief every coding agent reads. [CLAUDE.md](CLAUDE.md) is a one-line import of it plus Claude-Code-only mechanics, so the two cannot drift — they were byte-identical mirrors until 2026-08-23, and that duplication is deliberately gone. Area-specific rules live in `AGENTS.md` files next to the code they govern — [Sources/](Sources/AGENTS.md), [Example/](Example/AGENTS.md), [Tests/](Tests/AGENTS.md), [Documentation/](Documentation/AGENTS.md) — each paired with a one-line `CLAUDE.md`. Agents read the nearest file, so a rule belongs in the narrowest file that covers it.
+
+**Before editing any of them, read “Maintaining these instruction files” in [AGENTS.md](AGENTS.md)** — it is the binding policy for layout, size budget, what to keep out, and when to update. Treat these files as code: they ship in the same PR as the change that makes them true, and they are reviewed like any other.
+
+Alongside them, `.claude/` carries the automation — all plain files any agent can read, executed automatically by Claude Code:
+
+| Path | What it is |
+|---|---|
+| `.claude/rules/` | Path-scoped rules for files no directory file reaches: `Package.swift`, `CHANGELOG.md`, `.github/workflows/` |
+| `.claude/skills/` | Procedures — `verify` (walks the definition of done) and `release` (manual-only) |
+| `.claude/hooks/` | Three scripts: a git guard that escalates writes to `main`, a clean-code checker over edited Swift files, and a session-start status line |
+| `.claude/settings.json` | Shared permissions, generated-tree read denials, and the hook wiring |
+
+A separate **adopter kit** serves agents working on apps that consume Pal: [`Documentation/ADOPTERS.md`](Documentation/ADOPTERS.md) is canonical, [`plugins/pal-adopter/`](plugins/pal-adopter/) delivers it to Claude Code through a symlink rather than a copy, and `docs.yml` publishes `llms.txt` alongside DocC. `Scripts/check-adopter-kit.sh` guards all three against drift and is part of the release checklist — a stale plugin `version` is silent, and installed adopters simply never receive the update.
+
+The hooks are ordinary Python and bash, reviewed like any other code in this repository — read them before you trust the checkout. The clean-code checker flags `print(`, `try!`, `as!`, and `AnyView`; it was validated against all 193 Swift files in `Sources/` and `Example/` with zero false positives. **`.claude/` never holds a rule on its own** — it enforces or elaborates a rule that lives in an `AGENTS.md`.
 
 **Documentation follows every change.** When you add or change a public API, a decision, or a product's behavior, update the affected docs in the same change: the relevant [product guide](Documentation/Products/), [DECISIONS.md](Documentation/DECISIONS.md), [ARCHITECTURE.md](Documentation/ARCHITECTURE.md), and the status below.
 
@@ -31,6 +50,11 @@ The naming conventions and the 12 clean-code rules in [DECISIONS.md §4–5](Doc
 - **`feature/{name}`** — branch off `develop`; merge back into `develop` when done.
 - **`hotfix/{name}`** — branch off `main` for an urgent fix; merge into **both** `main` (tag a patch, e.g. `v1.0.1`) **and** `develop` (so the next release doesn't revert it).
 - A release is `develop → main` plus a SemVer **tag**, a **[CHANGELOG.md](CHANGELOG.md) entry**, and a GitHub Release. **Consumers pin to tags, never to a branch.**
+- **Every CHANGELOG entry opens with an `Affects:` line** naming the products it touches (`Affects: documentation only` for a docs release). One tag versions all twelve products, so a consumer who imports two of them otherwise has to read the whole entry to learn it doesn't concern them. Start from the diff rather than from memory:
+  ```bash
+  git diff --name-only <last-tag>..HEAD -- Sources | grep '\.swift$' | cut -d/ -f2 | sort -u
+  ```
+  That's a **candidate** list — trim it to the products whose public API or behavior actually changed. Doc-comment fixes and in-repo call-site updates (e.g. pattern matches adjusted for a changed enum case elsewhere) show up in the diff but change nothing for a consumer of that product.
 - **Merge discipline:** push the `feature/*` (or `hotfix/*`) branch and **request review before merging** — don't self-merge into `develop`/`main` without a cross-check. *(Active from the Notifications feature onward.)*
 
 ## Compatibility & evolution
@@ -101,6 +125,8 @@ Parked (owner hold / no verdict): keyboard utilities beyond `hideKeyboard()` · 
 > **`v1.4.1` shipped** (2026-07-07): documentation-only — editorial pass on the release notes and deviations log. No API or behavior change.
 >
 > **`v1.5.0` shipped** (2026-07-18): networking hardening, driven by an end-to-end validation of PalNetworking against a purpose-built local mock backend. The `+`-query fix, error-response headers, 429/`Retry-After`, per-request `timeout`/`maxRetries`/`redirectPolicy`, `RedirectPolicy`, `sendWithResponse`, `NetworkError` accessors + redaction-safe description, `KeyValuePairs` query init, `MultipartPart` factories, `PagedLoader.performLoadMore`, and `Loader.reset`. **The first release to carry a deliberate source break in a MINOR** — `unacceptableStatus` gained `headers:` while PalNetworking has zero adopters (owner-ruled; see the deviations log). `diagnose-api-breaking-changes` against `v1.4.1` confirmed the ONLY breaks are the two intended ones (the enum case + the in-place `RequestOptions.init` extension); every other product clean. Both toolchain edges green.
+>
+> **`v1.5.1` shipped** (2026-08-23): documentation-only — the agent-facing layer. An adopter brief (`Documentation/ADOPTERS.md`) delivered three ways: pasted into an app's own `AGENTS.md`, through the new `pal-adopter` plugin (this repo is now a plugin marketplace), and via `llms.txt` on the docs site. Contributor tooling too: `AGENTS.md` is canonical with `CLAUDE.md` importing it, per-area instruction files, path-scoped rules, `verify`/`release` skills, and hooks. Plus a fix that let the Example app build from any clone (its local package reference walked out of the repo by folder name) and a redundancy pass over all 52 markdown docs. **No Swift source changed** — every product byte-identical to `v1.5.0`, `diagnose-api-breaking-changes` clean on all twelve.
 
 ## Deviations log
 

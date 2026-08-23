@@ -134,7 +134,7 @@
 			mainGroup = D763A2952FCB38A0005CF20F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				D77700712FDADB89000D9E3E /* XCLocalSwiftPackageReference "../../mvvm-foundation" */,
+				D77700712FDADB89000D9E3E /* XCLocalSwiftPackageReference ".." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D763A29F2FCB38A0005CF20F /* Products */;
@@ -376,9 +376,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		D77700712FDADB89000D9E3E /* XCLocalSwiftPackageReference "../../mvvm-foundation" */ = {
+		D77700712FDADB89000D9E3E /* XCLocalSwiftPackageReference ".." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../mvvm-foundation";
+			relativePath = "..";
 		};
 /* End XCLocalSwiftPackageReference section */
 

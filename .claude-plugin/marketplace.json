@@ -1,0 +1,17 @@
+{
+  "name": "pal-foundation",
+  "description": "Agent tooling for apps built on the Pal iOS foundation.",
+  "owner": {
+    "name": "Panagiotis Palamidas",
+    "url": "https://github.com/Mesrine23/pal-mvvm-foundation"
+  },
+  "plugins": [
+    {
+      "name": "pal-adopter",
+      "source": "./plugins/pal-adopter",
+      "description": "Conventions and procedures for building an iOS app on the Pal foundation: the canonical screen slice, choosing a product, and app-layer naming.",
+      "category": "ios",
+      "tags": ["ios", "swift", "swiftui", "mvvm"]
+    }
+  ]
+}
