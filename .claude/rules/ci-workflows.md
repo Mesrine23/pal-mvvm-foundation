@@ -28,4 +28,6 @@ That state lives in repo settings, not in this repository, so it survives no clo
 
 The `PRODUCTS` list appears **twice** in `docs.yml` — the docbuild loop and the landing-index generator. Adding a product means editing both.
 
+The landing-index step also emits `site/llms.txt`, the entry point agents fetch from the docs site. It reuses that step's `PRODUCTS` variable deliberately — keep the two generators in one step so the product list stays single-sourced.
+
 DocC is built plugin-free (`xcodebuild docbuild`) on purpose: `swift-docc-plugin` would put an external package in `Package.swift`. Never switch to the plugin.

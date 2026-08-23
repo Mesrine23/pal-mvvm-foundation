@@ -1,0 +1,1 @@
+../../../Documentation/ADOPTERS.md

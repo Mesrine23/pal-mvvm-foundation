@@ -10,6 +10,7 @@ Extends [../AGENTS.md](../AGENTS.md). These are the consumer-facing docs. The st
 | A design decision or its rationale | [DECISIONS.md](DECISIONS.md) |
 | Layers, the DAG, a pattern, adoption guidance | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Onboarding: install → composition root → first feature | [GettingStarted.md](GettingStarted.md) |
+| What an agent in a *consuming app* needs | [ADOPTERS.md](ADOPTERS.md) — then `Scripts/check-adopter-kit.sh` |
 | What shipped in a release | [../CHANGELOG.md](../CHANGELOG.md) |
 | Implementation status, phase log, approved exceptions | [../CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Symbol-level reference | the product's `.docc` catalog under `Sources/` — never hand-written here |

@@ -21,7 +21,7 @@ Verify before you claim additivity:
 swift package diagnose-api-breaking-changes "$(git tag --list 'v*' --sort=-v:refname | head -1)"
 ```
 
-CI runs this as the `api-stability` job against the latest release tag. A deliberate break (a major release) is the one case where it is expected to fail — ship it with the new major tag and the gate re-baselines. It warns-and-skips instead of failing when the baseline tag no longer builds on the CI toolchain.
+CI runs this as the `api-stability` job against the latest release tag; a deliberate break is the one expected red. Its failure semantics are in [.claude/rules/ci-workflows.md](../.claude/rules/ci-workflows.md).
 
 ## DocC catalogs
 
@@ -32,7 +32,6 @@ Each product owns `Sources/<Target>/<Target>.docc`. **Adding a public symbol mea
 - **PalCore is Foundation-only** — no SwiftUI, no UIKit, no StoreKit.
 - UIKit appears only behind `#if canImport(UIKit)`, in PalDebugKit (shake detection + the above-everything overlay window), PalNotifications, and PalWeb. Adding UIKit to another product needs owner approval.
 - The macOS 14 platform floor in `Package.swift` exists only so the host can build and test; products target iOS.
-- **Toolchain portability:** a system-framework wrapper that compiles locally on the newest Xcode can fail on the `macos-15` consumer floor, where the older SDK has not concurrency-annotated the framework. The fix is `@preconcurrency import <Framework>` (a no-op on newer SDKs). Check CI after any such change.
 
 ## Required-reason APIs
 
@@ -41,7 +40,3 @@ Each product owns `Sources/<Target>/<Target>.docc`. **Adding a public symbol mea
 ## Localization
 
 Products with user-facing text (PalDesignSystem, PalPresentation, PalDebugKit) ship String Catalogs via `Bundle.module` in **en + el**, and accept optional custom strings so apps override without forking. PalDebugKit's menu is the one deliberate exception — it is developer-facing and stays unlocalized.
-
-## Behavior worth knowing before you debug
-
-`URLSession` transparently retries dropped connections beneath PalNetworking, so one logical `send()` can produce several server hits and `RetryInterceptor(maxRetries:)` multiplies that. It is not controllable from this layer; the cap governs *logical* attempts. Size server-side rate-limit and idempotency budgets accordingly.

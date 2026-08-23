@@ -13,7 +13,7 @@ Everything binding is in [AGENTS.md](AGENTS.md), imported above. This file adds 
 
 ## What runs automatically
 
-- **`/verify`** walks Pal's seven-point definition of done and reports PASS/FAIL per condition. Run it before saying a change is finished — it is the cheapest defense against a false "done".
+- **`/verify`** walks Pal's eight-point definition of done and reports PASS/FAIL per condition. Run it before saying a change is finished — it is the cheapest defense against a false "done".
 - **`/release`** is manual-only (`disable-model-invocation`). Never invoke it unless the owner asked for a release.
 - **Hooks** (wired in `.claude/settings.json`): a `SessionStart` line reporting branch, dirtiness, and latest tag; a `PreToolUse` guard that escalates git writes to `main`; a `PostToolUse` checker that flags `print(`, `try!`, `as!`, and `AnyView` in files you just edited under `Sources/` or `Example/`. If the checker fires, fix the code — do not edit the hook.
 - Verified commands (`swift build`, `swift test`, `xcodebuild` on the Example, read-only `git`/`gh`) are pre-approved in `.claude/settings.json`, and `.build/` is denied to reads so vendored checkouts stay out of context.

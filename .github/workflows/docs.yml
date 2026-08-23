@@ -53,6 +53,32 @@ jobs:
             done
             echo '</ul></body></html>'
           } > site/index.html
+          REPO_DOCS=https://github.com/Mesrine23/pal-mvvm-foundation/blob/main
+          {
+            echo '# Pal'
+            echo
+            echo '> A reusable, zero-dependency iOS foundation: one Swift Package, twelve library products, consumed by apps via SPM. Swift 6 strict concurrency, iOS 17+, MVVM + Coordinators, Clean layering. The foundation ships mechanisms; apps ship values — endpoints, strings, brand tokens, storage keys and environments are supplied by the app.'
+            echo
+            echo '## Start here'
+            echo
+            echo "- [Adopter brief]($REPO_DOCS/Documentation/ADOPTERS.md): the conventions an agent needs to build an app on Pal — mechanisms vs values, the Loader/ViewState screen shape, app-layer naming, and the gotchas that cost the most time."
+            echo "- [Getting Started]($REPO_DOCS/Documentation/GettingStarted.md): install, the app shell, the composition root, and the first feature end to end."
+            echo "- [Architecture]($REPO_DOCS/Documentation/ARCHITECTURE.md): layers, the product dependency DAG, patterns, adoption notes."
+            echo "- [Changelog]($REPO_DOCS/CHANGELOG.md): per-release changes; every entry opens with the products it affects."
+            echo
+            echo '## Product guides'
+            echo
+            for PRODUCT in $PRODUCTS; do
+              echo "- [$PRODUCT]($REPO_DOCS/Documentation/Products/$PRODUCT.md): usage guide."
+            done
+            echo
+            echo '## API reference'
+            echo
+            for PRODUCT in $PRODUCTS; do
+              LOWER=$(echo "$PRODUCT" | tr '[:upper:]' '[:lower:]')
+              echo "- [$PRODUCT symbols](https://mesrine23.github.io/pal-mvvm-foundation/$LOWER/documentation/$LOWER/): generated DocC reference."
+            done
+          } > site/llms.txt
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site

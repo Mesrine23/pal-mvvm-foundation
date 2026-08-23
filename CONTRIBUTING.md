@@ -33,6 +33,8 @@ Alongside them, `.claude/` carries the automation — all plain files any agent 
 | `.claude/hooks/` | Three scripts: a git guard that escalates writes to `main`, a clean-code checker over edited Swift files, and a session-start status line |
 | `.claude/settings.json` | Shared permissions, generated-tree read denials, and the hook wiring |
 
+A separate **adopter kit** serves agents working on apps that consume Pal: [`Documentation/ADOPTERS.md`](Documentation/ADOPTERS.md) is canonical, [`plugins/pal-adopter/`](plugins/pal-adopter/) delivers it to Claude Code through a symlink rather than a copy, and `docs.yml` publishes `llms.txt` alongside DocC. `Scripts/check-adopter-kit.sh` guards all three against drift and is part of the release checklist — a stale plugin `version` is silent, and installed adopters simply never receive the update.
+
 The hooks are ordinary Python and bash, reviewed like any other code in this repository — read them before you trust the checkout. The clean-code checker flags `print(`, `try!`, `as!`, and `AnyView`; it was validated against all 193 Swift files in `Sources/` and `Example/` with zero false positives. **`.claude/` never holds a rule on its own** — it enforces or elaborates a rule that lives in an `AGENTS.md`.
 
 **Documentation follows every change.** When you add or change a public API, a decision, or a product's behavior, update the affected docs in the same change: the relevant [product guide](Documentation/Products/), [DECISIONS.md](Documentation/DECISIONS.md), [ARCHITECTURE.md](Documentation/ARCHITECTURE.md), and the status below.
