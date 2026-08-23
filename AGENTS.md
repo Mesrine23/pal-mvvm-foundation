@@ -31,7 +31,7 @@ swift test         # smoke + targeted tests
 # Example app: open Example/PalExample.xcodeproj (or xcodebuild -project ... -scheme PalExample)
 ```
 
-Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI runs `swift build` + `swift test` on push to `main` and on every PR; the Example app is verified locally.
+Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI runs `swift build` + `swift test` on every push to `main` or `develop` and on every PR; the Example app is verified locally.
 
 **CI builds on BOTH toolchain edges** (`macos-15` = Xcode 16 / Swift 6.1 — the consumer floor — and `macos-26` = the latest), plus an `api-stability` job. Newer SDKs concurrency-annotate system frameworks, so local green can hide strict-concurrency errors the floor hits — after touching any system-framework wrapper, check CI and fix with `@preconcurrency import <Framework>` (see the `v1.3.1` deviations entry):
 

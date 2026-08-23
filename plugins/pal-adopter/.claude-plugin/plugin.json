@@ -1,7 +1,7 @@
 {
   "name": "pal-adopter",
   "description": "Conventions and procedures for building an iOS app on the Pal foundation: the canonical screen slice, choosing a product, and app-layer naming.",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "author": {
     "name": "Panagiotis Palamidas"
   },
