@@ -4,6 +4,16 @@ Consumer-facing changes per release, newest first — **the** place for users an
 
 One tag versions all twelve products, so every entry opens with **`Affects:`** — the products that release touches. If you don't import them, you can skip the rest of the entry.
 
+## [1.5.2] — 2026-08-23
+
+**Affects:** documentation only
+
+Two defects in the agent tooling shipped by `v1.5.1`, both found by using it to cut that release. No product source changed.
+
+### Fixed
+- **CI now runs on `develop`.** It triggered only on pushes to `main` and on pull requests, so work merged into `develop` stayed unbuilt until a PR opened — the `v1.5.1` candidate reached the release gate with no CI run on its own tip. Integration work is now built on both toolchain edges as it lands.
+- **`/verify` no longer contradicts `/release`.** Condition 8 called being on `develop` a failure while `/release` requires it, so mid-release neither could be satisfied without ignoring the other. A committed release prep is now an explicit exception; feature work committed straight to `develop` still fails.
+
 ## [1.5.1] — 2026-08-23
 
 **Affects:** documentation only
