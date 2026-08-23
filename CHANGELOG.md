@@ -4,6 +4,24 @@ Consumer-facing changes per release, newest first — **the** place for users an
 
 One tag versions all twelve products, so every entry opens with **`Affects:`** — the products that release touches. If you don't import them, you can skip the rest of the entry.
 
+## [1.5.1] — 2026-08-23
+
+**Affects:** documentation only
+
+No product source changed in this release — every Swift file is byte-identical to `v1.5.0`, and `diagnose-api-breaking-changes` reports all twelve products clean. It ships the agent-facing documentation layer and one Example-project fix.
+
+### Added
+- **An adopter brief for coding agents** — [`Documentation/ADOPTERS.md`](Documentation/ADOPTERS.md): the law, the product-selection table, the `Loader`/`ViewState` screen shape, app-layer naming, and the gotchas that cost adopters the most time, in one page you paste into your app's `AGENTS.md`.
+- **The `pal-adopter` plugin** — this repository is now a Claude Code plugin marketplace. Two skills (the conventions, and the canonical screen slice) plus the brief itself. Install with `/plugin marketplace add Mesrine23/pal-mvvm-foundation`, or commit it to your app's settings so the whole team gets it. See [`plugins/pal-adopter/`](plugins/pal-adopter/).
+- **`llms.txt`** on the documentation site, indexing the guides and the DocC roots for agents that fetch it.
+- **Contributor agent tooling** — `AGENTS.md` is now canonical with `CLAUDE.md` importing it, per-area instruction files, path-scoped rules, `verify`/`release` skills, and hooks that guard branch policy and the clean-code rules.
+
+### Fixed
+- **The Example app now builds from any clone.** Its local package reference was `../../mvvm-foundation`, which walked out of the repository and back in by a folder name that only matched one machine — a clone from GitHub is named `pal-mvvm-foundation`, so package resolution failed before anything compiled. It is now `..`. Contributor-facing only; apps consume the package through SPM and never build the Example.
+
+### Documentation
+- Redundancy pass over all 52 markdown documents: duplicated sections removed from `ARCHITECTURE.md` and `DECISIONS.md`, and three stale claims corrected in `DECISIONS` — including one stating that apps may pin a branch or commit, which contradicted the tags-only policy the `api-stability` gate enforces.
+
 ## [1.5.0] — 2026-07-18
 
 **Affects:** PalNetworking, PalPresentation

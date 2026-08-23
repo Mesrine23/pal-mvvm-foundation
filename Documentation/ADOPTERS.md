@@ -7,7 +7,7 @@
      adopter's own AGENTS.md, and the plugin's reference/ — and only absolute links work in all three.
      Do not "tidy" them into relative paths. -->
 
-> **Written for Pal `v1.5.0`.** Check yours: the tag in your `Package.resolved`, or `AppInfo` at runtime.
+> **Written for Pal `v1.5.1`.** Check yours: the tag in your `Package.resolved`, or `AppInfo` at runtime.
 
 **Copy the body of this file into your app's `AGENTS.md` under a `## Pal` heading** (or install the [`pal-adopter` plugin](https://github.com/Mesrine23/pal-mvvm-foundation/tree/main/plugins/pal-adopter), which ships it for you). It is deliberately short — it has to fit inside *your* app's instruction budget alongside your own rules.
 
