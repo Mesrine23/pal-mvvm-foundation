@@ -1,10 +1,10 @@
 ---
 name: verify
 description: Run Pal's definition of done and report which conditions pass or fail. Use before claiming any change is finished, and when asked to verify, check the build, or confirm things are green.
-allowed-tools: Bash(swift build) Bash(swift test*) Bash(xcodebuild*) Bash(git status*) Bash(git diff*) Bash(git tag*) Bash(swift package diagnose-api-breaking-changes*)
+allowed-tools: Bash(Scripts/check-adopter-kit.sh*) Bash(./Scripts/check-adopter-kit.sh*) Bash(swift build) Bash(swift test*) Bash(xcodebuild*) Bash(git status*) Bash(git diff*) Bash(git tag*) Bash(swift package diagnose-api-breaking-changes*)
 ---
 
-Walk all seven conditions. Report each as PASS or FAIL **with the actual output** for anything that fails. Never summarize a failure as a warning, and never report the change as done while one is FAIL.
+Walk all eight conditions. Report each as PASS or FAIL **with the actual output** for anything that fails. Never summarize a failure as a warning, and never report the change as done while one is FAIL.
 
 ## 1–2. Package builds and tests
 
@@ -45,7 +45,15 @@ A detected break is a FAIL unless it is a deliberate, owner-ruled break — say 
 
 A changed public API, decision, or behavior means the product guide, `DECISIONS.md`, `ARCHITECTURE.md`, and the CONTRIBUTING status were updated in the same change. List which you touched, or state that none applied and why.
 
-## 7. Branch discipline
+## 7. Adopter kit is consistent
+
+Only when the change touched `Documentation/ADOPTERS.md`, `plugins/`, or `.claude-plugin/`:
+
+```bash
+Scripts/check-adopter-kit.sh
+```
+
+## 8. Branch discipline
 
 ```bash
 git status --short && git branch --show-current

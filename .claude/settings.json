@@ -16,7 +16,9 @@
       "Bash(git tag *)",
       "Bash(git show *)",
       "Bash(gh run list *)",
-      "Bash(gh run view *)"
+      "Bash(gh run view *)",
+      "Bash(Scripts/check-adopter-kit.sh*)",
+      "Bash(./Scripts/check-adopter-kit.sh*)"
     ],
     "deny": [
       "Read(./.build/**)",
@@ -48,7 +50,7 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-main.py\"",
             "timeout": 10,
-            "statusMessage": "Checking Pal branch policy…"
+            "statusMessage": "Checking Pal branch policy\u2026"
           }
         ]
       }
@@ -61,7 +63,7 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/check-swift-rules.py\"",
             "timeout": 10,
-            "statusMessage": "Checking Pal clean-code rules…"
+            "statusMessage": "Checking Pal clean-code rules\u2026"
           }
         ]
       }

@@ -21,6 +21,7 @@ Pal is a reusable, zero-dependency iOS foundation: one Swift Package, multiple l
 | [.claude/skills/](.claude/skills/) | Procedures: `/verify` (walks the definition of done), `/release` | on demand |
 | [.claude/hooks/](.claude/hooks/) | Branch-policy guard · clean-code checker · session orientation | automatically |
 | [.claude/settings.json](.claude/settings.json) | Pre-approved verify commands, generated-tree read denials, hook wiring | every session |
+| [plugins/pal-adopter/](plugins/pal-adopter/) | The adopter kit — for agents in apps that *consume* Pal, never for work in this repo | installed by adopters |
 
 ## Build & verify
 
@@ -50,7 +51,8 @@ A change is finished only when every line below holds. Do not report completion 
 4. Every new public symbol carries a `///` doc comment **and** an entry in its product's `.docc` Topics.
 5. Affected docs are updated **in the same change** — product guide, DECISIONS, ARCHITECTURE, CONTRIBUTING status (see [Documentation map](#documentation-map)).
 6. If it ships in a release: a [CHANGELOG.md](CHANGELOG.md) entry exists, opening with an `Affects:` line.
-7. The work sits on a pushed `feature/*` (or `hotfix/*`) branch — **not merged**.
+7. If it touched `Documentation/ADOPTERS.md`, `plugins/`, or `.claude-plugin/`: `Scripts/check-adopter-kit.sh` exits 0.
+8. The work sits on a pushed `feature/*` (or `hotfix/*`) branch — **not merged**.
 
 ## Never
 
@@ -124,6 +126,7 @@ Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Val
 - [Per-product guides](Documentation/Products/) — the API and usage of each product.
 - [DECISIONS](Documentation/DECISIONS.md) — the design and its rationale (a living document, open to discussion).
 - [CHANGELOG](CHANGELOG.md) — per-release changes, newest first; **every release adds an entry** (part of the release checklist).
+- [ADOPTERS](Documentation/ADOPTERS.md) — the brief for agents working in apps built on Pal; canonical source for the `pal-adopter` plugin and `llms.txt`.
 - [CONTRIBUTING](CONTRIBUTING.md) — build/verify, **implementation status & phase log**, and the deviations log.
 
 **Status lives in CONTRIBUTING** (single source — do not restate it here, so it can't go stale). At a glance: all 12 products are built. **When you change an API, a decision, or a product's behavior, update the affected docs in the same change.**

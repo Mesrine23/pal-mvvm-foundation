@@ -38,6 +38,17 @@ Import only the products you need — each declares its own dependencies, so you
 
 **You need it today and can't wait for a release** → fork, add this repo as `upstream`, and merge tags periodically so you keep taking fixes.
 
+## Building on Pal with a coding agent
+
+Point your agent at **[the adopter brief](Documentation/ADOPTERS.md)** — the conventions it needs in one page: mechanisms vs values, the `Loader`/`ViewState` screen shape, app-layer naming, and the gotchas that cost the most time. Paste it into your app's `AGENTS.md`, or install the plugin and skip the copy:
+
+```bash
+/plugin marketplace add Mesrine23/pal-mvvm-foundation
+/plugin install pal-adopter@pal-foundation
+```
+
+Details, including how to enable it for everyone on your app in one commit, are in [`plugins/pal-adopter/`](plugins/pal-adopter/). Agents with web access can also start from [`llms.txt`](https://mesrine23.github.io/pal-mvvm-foundation/llms.txt) on the docs site.
+
 ## Documentation
 
 - **[API reference (DocC)](https://mesrine23.github.io/pal-mvvm-foundation/)** — symbol-level docs for every product, browsable on the web (or *Product ▸ Build Documentation* in Xcode).
@@ -46,6 +57,7 @@ Import only the products you need — each declares its own dependencies, so you
 - **[Per-product guides](Documentation/Products/)** — the API and usage of each product.
 - **[Design decisions](Documentation/DECISIONS.md)** — why Pal is shaped the way it is.
 - **[Changelog](CHANGELOG.md)** — what each release added.
+- **[Adopter brief](Documentation/ADOPTERS.md)** — the one-page agent brief for apps built on Pal.
 - **[Contributing](CONTRIBUTING.md)** — build/verify, the binding conventions, and the deviations log.
 
 ## Develop

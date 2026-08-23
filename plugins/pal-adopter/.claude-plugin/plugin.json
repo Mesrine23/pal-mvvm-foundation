@@ -1,0 +1,10 @@
+{
+  "name": "pal-adopter",
+  "description": "Conventions and procedures for building an iOS app on the Pal foundation: the canonical screen slice, choosing a product, and app-layer naming.",
+  "version": "1.5.0",
+  "author": { "name": "Panagiotis Palamidas" },
+  "homepage": "https://mesrine23.github.io/pal-mvvm-foundation/",
+  "repository": "https://github.com/Mesrine23/pal-mvvm-foundation",
+  "license": "MIT",
+  "keywords": ["ios", "swift", "swiftui", "mvvm", "pal"]
+}

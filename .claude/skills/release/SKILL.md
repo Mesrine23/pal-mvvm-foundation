@@ -42,9 +42,17 @@ Newest first, `Affects:` first inside it. The template and the voice rules are i
 
 In `CONTRIBUTING.md`: the implementation-status or post-1.0 table, and a `> **vX.Y.Z** shipped (YYYY-MM-DD): …` note. Add a deviations-log entry if this release carries an approved exception.
 
-## 6. Ripple the docs
+## 6. Ripple the docs and the adopter kit
 
-Product guide, `DECISIONS.md`, `ARCHITECTURE.md`, `README.md` — whatever the release changed. Run `/verify` and require all seven conditions green.
+Product guide, `DECISIONS.md`, `ARCHITECTURE.md`, `README.md` — whatever the release changed.
+
+Then bump the adopter kit to this version — the brief's stamp and the plugin `version`, which is what makes `/plugin update` reach installed adopters at all:
+
+```bash
+Scripts/check-adopter-kit.sh vX.Y.Z
+```
+
+Run `/verify` and require all eight conditions green.
 
 ## 7. Stop and ask
 
