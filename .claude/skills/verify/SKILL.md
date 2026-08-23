@@ -60,3 +60,5 @@ git status --short && git branch --show-current
 ```
 
 Work belongs on a pushed `feature/*` or `hotfix/*` branch, not merged. Being on `main` or `develop` with uncommitted work is a FAIL.
+
+**One exception:** a release prep runs on `develop` by design (`/release` step 1 requires it). During a release, this condition passes once the prep is committed — the CHANGELOG entry, the status note, and the adopter-kit bump belong on `develop`. Feature work committed straight to `develop` is still a FAIL.

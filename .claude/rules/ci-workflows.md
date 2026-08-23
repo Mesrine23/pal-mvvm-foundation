@@ -6,6 +6,8 @@ paths:
 
 # Editing CI
 
+`ci.yml` runs on every push to `main` or `develop` and on every pull request. `develop` is in that list deliberately: work merges there between releases, and without it a release candidate can reach the tag having never been built by CI.
+
 ## Never drop the `macos-15` edge
 
 `build-and-test` (`macos-15`, Xcode 16 / Swift 6.1) is the **consumer floor**, and it is the job that catches what local development cannot: newer SDKs concurrency-annotate system frameworks, so a wrapper that compiles on the latest Xcode can fail there. `build-and-test-latest` (`macos-26`) is the forward-looking edge. Both, always. Removing the floor edge silently ships breakage to every adopter on that toolchain.
