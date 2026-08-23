@@ -10,13 +10,30 @@ swift test         # smoke + targeted tests
 # Example app: open Example/PalExample.xcodeproj (or xcodebuild -project … -scheme PalExample)
 ```
 
-Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI enforces this on push/PR on **both toolchain edges** — `macos-15` (Xcode 16 / Swift 6.1, the consumer floor) and `macos-26` (latest) — plus the `api-stability` gate; the two-edge matrix exists because newer SDKs concurrency-annotate system frameworks, so one edge can pass where the other breaks (the `v1.3.1` lesson, in the deviations log). The macOS 14 platform floor exists only so the host can build/test; products target iOS — UIKit-only surfaces are gated with `#if canImport(UIKit)`.
+Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI enforces the package build and tests on push/PR on **both toolchain edges** — `macos-15` (Xcode 16 / Swift 6.1, the consumer floor) and `macos-26` (latest) — plus the `api-stability` gate; the Example app is verified locally. The two-edge matrix exists because newer SDKs concurrency-annotate system frameworks, so one edge can pass where the other breaks (the `v1.3.1` lesson, in the deviations log). The macOS 14 platform floor exists only so the host can build/test; products target iOS — UIKit-only surfaces are gated with `#if canImport(UIKit)`.
 
 **API reference docs are generated, not hand-written:** the `Docs` workflow builds DocC for all 12 products on every release tag (plugin-free `xcodebuild docbuild` — the package manifest stays zero-dependency) and publishes to [GitHub Pages](https://mesrine23.github.io/pal-mvvm-foundation/). Each product has a curated `Sources/<Target>/<Target>.docc` catalog: **when you add a public symbol, add it to the catalog's Topics** (an uncurated symbol still appears, just unorganized — visible decay, fix it in the same change).
 
 ## The rules are binding
 
-The naming conventions and the 12 clean-code rules in [DECISIONS.md §4–5](Documentation/DECISIONS.md) (mirrored in [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md)) are binding for humans and agents alike. Highlights worth re-reading before a PR: `///` on every public symbol · no force-unwraps/`AnyView`/`print` · scoped naming (foundation API uses standard Swift naming; the `…Protocol` suffix is app-layer only) · errors mapped at boundaries.
+The naming conventions and the 13 clean-code rules in [DECISIONS.md §4–5](Documentation/DECISIONS.md) (restated for agents in [AGENTS.md](AGENTS.md)) are binding for humans and agents alike. Highlights worth re-reading before a PR: `///` on every public symbol · no force-unwraps/`AnyView`/`print` · scoped naming (foundation API uses standard Swift naming; the `…Protocol` suffix is app-layer only) · errors mapped at boundaries.
+
+### Agent instructions
+
+[AGENTS.md](AGENTS.md) at the repository root is the canonical brief every coding agent reads. [CLAUDE.md](CLAUDE.md) is a one-line import of it plus Claude-Code-only mechanics, so the two cannot drift — they were byte-identical mirrors until 2026-08-23, and that duplication is deliberately gone. Area-specific rules live in `AGENTS.md` files next to the code they govern — [Sources/](Sources/AGENTS.md), [Example/](Example/AGENTS.md), [Tests/](Tests/AGENTS.md), [Documentation/](Documentation/AGENTS.md) — each paired with a one-line `CLAUDE.md`. Agents read the nearest file, so a rule belongs in the narrowest file that covers it.
+
+**Before editing any of them, read “Maintaining these instruction files” in [AGENTS.md](AGENTS.md)** — it is the binding policy for layout, size budget, what to keep out, and when to update. Treat these files as code: they ship in the same PR as the change that makes them true, and they are reviewed like any other.
+
+Alongside them, `.claude/` carries the automation — all plain files any agent can read, executed automatically by Claude Code:
+
+| Path | What it is |
+|---|---|
+| `.claude/rules/` | Path-scoped rules for files no directory file reaches: `Package.swift`, `CHANGELOG.md`, `.github/workflows/` |
+| `.claude/skills/` | Procedures — `verify` (walks the definition of done) and `release` (manual-only) |
+| `.claude/hooks/` | Three scripts: a git guard that escalates writes to `main`, a clean-code checker over edited Swift files, and a session-start status line |
+| `.claude/settings.json` | Shared permissions, generated-tree read denials, and the hook wiring |
+
+The hooks are ordinary Python and bash, reviewed like any other code in this repository — read them before you trust the checkout. The clean-code checker flags `print(`, `try!`, `as!`, and `AnyView`; it was validated against all 193 Swift files in `Sources/` and `Example/` with zero false positives. **`.claude/` never holds a rule on its own** — it enforces or elaborates a rule that lives in an `AGENTS.md`.
 
 **Documentation follows every change.** When you add or change a public API, a decision, or a product's behavior, update the affected docs in the same change: the relevant [product guide](Documentation/Products/), [DECISIONS.md](Documentation/DECISIONS.md), [ARCHITECTURE.md](Documentation/ARCHITECTURE.md), and the status below.
 
