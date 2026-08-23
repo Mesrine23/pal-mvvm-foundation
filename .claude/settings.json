@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(swift build)",
+      "Bash(swift build *)",
+      "Bash(swift test)",
+      "Bash(swift test *)",
+      "Bash(swift package describe *)",
+      "Bash(swift package diagnose-api-breaking-changes *)",
+      "Bash(xcodebuild -project Example/PalExample.xcodeproj *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git tag *)",
+      "Bash(git show *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)"
+    ],
+    "deny": [
+      "Read(./.build/**)",
+      "Read(./.docc-build/**)",
+      "Read(./**/xcuserdata/**)"
+    ]
+  },
+  "claudeMdExcludes": [
+    "**/.build/**",
+    "**/.docc-build/**"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/session-orientation.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-main.py\"",
+            "timeout": 10,
+            "statusMessage": "Checking Pal branch policy…"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/check-swift-rules.py\"",
+            "timeout": 10,
+            "statusMessage": "Checking Pal clean-code rules…"
+          }
+        ]
+      }
+    ]
+  }
+}
