@@ -143,34 +143,40 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
     }
 
     private func runLoadMore(from current: [Item], cursor: Cursor?, generation: Int) async {
+        defer { releaseLoadMore(ownedBy: generation) }
         do {
             let page = try await operation(cursor)
             guard isCurrent(generation) else { return }
             state = .loaded(current + page.items)
             nextCursor = page.nextCursor
             hasMore = page.nextCursor != nil
-            isLoadingMore = false
         } catch is CancellationError {
         } catch {
             guard isCurrent(generation) else { return }
             loadMoreError = PresentableError(from: error)
-            isLoadingMore = false
         }
     }
 
     private func runFirstPage(generation: Int) async {
+        defer { releaseFirstPage(ownedBy: generation) }
         do {
             let page = try await operation(nil)
             guard isCurrent(generation) else { return }
             state = .loaded(page.items)
             nextCursor = page.nextCursor
             hasMore = page.nextCursor != nil
-            isLoadingFirstPage = false
         } catch is CancellationError {
         } catch {
             guard isCurrent(generation) else { return }
             state = .failed(PresentableError(from: error), previous: state.value)
-            isLoadingFirstPage = false
         }
+    }
+
+    private func releaseFirstPage(ownedBy generation: Int) {
+        if generation == self.generation { isLoadingFirstPage = false }
+    }
+
+    private func releaseLoadMore(ownedBy generation: Int) {
+        if generation == self.generation { isLoadingMore = false }
     }
 }

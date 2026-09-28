@@ -287,6 +287,48 @@ struct PagedLoaderTests {
         #expect(loader.state.value == nil)
         #expect(loader.state.isLoading)
     }
+
+    // MARK: - A cancelled caller releases what it held
+
+    @Test("A performLoadMore cancelled by its caller releases the footer, so loading more works again")
+    func cancelledPerformLoadMoreReleasesFooter() async {
+        let loadMoreCalls = LockedBox(0)
+        let loader = PagedLoader<Int, Int> { cursor in
+            guard let cursor else { return Page(items: [1], nextCursor: 2) }
+            if loadMoreCalls.increment() == 1 { try await Task.sleep(for: .seconds(10)) }
+            return Page(items: [cursor], nextCursor: nil)
+        }
+        await loader.performLoad()
+        let cancelled = Task { await loader.performLoadMore() }
+        await waitUntil { loadMoreCalls.value >= 1 }
+
+        cancelled.cancel()
+        await cancelled.value
+
+        #expect(loader.isLoadingMore == false)
+        await loader.performLoadMore()
+        #expect(loader.state.value == [1, 2])
+    }
+
+    @Test("A refresh cancelled by its caller releases the first-page lock, so loading more works again")
+    func cancelledRefreshReleasesFirstPageLock() async {
+        let firstPages = LockedBox(0)
+        let loader = PagedLoader<Int, Int> { cursor in
+            if let cursor { return Page(items: [cursor], nextCursor: nil) }
+            if firstPages.increment() == 2 { try await Task.sleep(for: .seconds(10)) }
+            return Page(items: [1], nextCursor: 2)
+        }
+        await loader.performLoad()
+        let cancelled = Task { await loader.refresh() }
+        await waitUntil { firstPages.value >= 2 }
+
+        cancelled.cancel()
+        await cancelled.value
+
+        #expect(loader.state.value == [1])
+        await loader.performLoadMore()
+        #expect(loader.state.value == [1, 2])
+    }
 }
 
 private final class LockedBox<Value: Sendable>: @unchecked Sendable {

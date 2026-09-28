@@ -13,6 +13,7 @@ A loader-ordering fix, and a documentation batch from adoption feedback on fully
 ### Fixed
 - **The newest load always wins.** `Loader` cancelled only the tasks its own `load(_:)` started, so an awaited `performLoad(_:)` or `refresh(_:)` that finished *after* a newer call overwrote the newer result — a slow `.task` load could replace what a retry had just loaded. Now whichever of `load`, `performLoad`, or `refresh` started last owns the state, and older results are discarded. `PagedLoader` gets the same guarantee, and a `performLoadMore()` started before a reload no longer appends to the reloaded list.
 - `cancel()` and `reset()` on both loaders now also discard an awaited load still in flight — previously one landing late could undo a `reset()`.
+- **`PagedLoader` no longer gets stuck after a cancelled call.** When the task awaiting `performLoadMore()` or `refresh()` was cancelled, the loader kept believing a fetch was in flight, and every later `loadMore()` silently did nothing until the next reload. A cancelled call now releases what it held.
 
 ### Documentation
 - **Fully-local apps read synchronously.** An on-device store's reads are now documented as synchronous — a `@MainActor` store over SwiftData's `mainContext`, `execute() throws -> T` use cases, and ViewModels that hold values, with no `Loader` (Getting Started, Architecture, DECISIONS, the adopter brief and plugin skills). `Loader` remains the runner for async work.
