@@ -4,11 +4,11 @@ Consumer-facing changes per release, newest first — **the** place for users an
 
 One tag versions all twelve products, so every entry opens with **`Affects:`** — the products that release touches. If you don't import them, you can skip the rest of the entry.
 
-## [1.5.3] — Unreleased
+## [1.5.3] — 2026-09-28
 
 **Affects:** PalPresentation
 
-A loader-ordering fix, and a documentation batch from adoption feedback on fully-local apps. No public API changed — `diagnose-api-breaking-changes` is clean against `v1.5.2`.
+Two loader fixes, and a documentation batch from adoption feedback on fully-local apps. No public API changed — `diagnose-api-breaking-changes` is clean against `v1.5.2`.
 
 ### Fixed
 - **The newest load always wins.** `Loader` cancelled only the tasks its own `load(_:)` started, so an awaited `performLoad(_:)` or `refresh(_:)` that finished *after* a newer call overwrote the newer result — a slow `.task` load could replace what a retry had just loaded. Now whichever of `load`, `performLoad`, or `refresh` started last owns the state, and older results are discarded. `PagedLoader` gets the same guarantee, and a `performLoadMore()` started before a reload no longer appends to the reloaded list.
