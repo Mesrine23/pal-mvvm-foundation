@@ -30,7 +30,7 @@ DTO, a `Request` factory extension, and the repository that maps DTO → entity.
 extension Request { static func items() -> Request<[ItemDTO]> { .init(path: "/items") } }
 ```
 
-For a local app, the repository wraps a `@ModelActor` over SwiftData instead of a `NetworkClient`, and returns domain structs — same seam.
+For a local app, the repository is a synchronous `@MainActor` store over SwiftData's `mainContext` that returns domain structs. Then drop `async` from steps 1–2 and the `Loader` from 3–4: the ViewModel holds the value and reloads after writes. `reference/ADOPTERS.md` links the worked example.
 
 ## 3. ViewModel
 
@@ -56,7 +56,14 @@ The delegate is `weak` and `AnyObject`. No `isLoading`, no error flag — the `L
 
 ## 4. View
 
-Switch on the state; one `.task` to load. User-facing text comes from the String Catalog, never a literal.
+Own the ViewModel with `@State`, switch on the state, one `.task` to load. User-facing text comes from the String Catalog, never a literal.
+
+```swift
+@State private var viewModel: ItemsViewModel
+init(viewModel: ItemsViewModel) { _viewModel = State(initialValue: viewModel) }
+```
+
+Destination and `.sheet` closures re-run on unrelated re-renders and build a fresh ViewModel; `@State` keeps the first, where a plain `let` would swap it mid-edit.
 
 ```swift
 switch viewModel.items.state {
@@ -90,4 +97,4 @@ func makeItemsViewModel(delegate: ItemsNavigationDelegate?) -> ItemsViewModel {
 
 ## Before you call it done
 
-Every user-facing string is a catalog key · the delegate is weak · the View owns no business logic and touches no client or repository · an action's failure goes to `.appAlert` and its confirmation to `.appToast`, not to the screen's `ViewState`.
+Every user-facing string is a catalog key · the View holds its ViewModel in `@State` · the delegate is weak · the View owns no business logic and touches no client or repository · an action's failure goes to `.appAlert` and its confirmation to `.appToast`, not to the screen's `ViewState`.

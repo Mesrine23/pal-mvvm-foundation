@@ -18,7 +18,7 @@
 |---|---|
 | `LoggerFactory.make(category:)` | Returns an `os.Logger` (subsystem = main bundle id). |
 | `Debouncer` | Task-based debounce for search-as-you-type and bursty events. |
-| `withTimeout(_:operation:)` | Races async work against a `Duration` deadline; throws `TimeoutError`. |
+| `withTimeout(_:operation:)` | Races async work against a `Duration` deadline; throws `TimeoutError`. Only as prompt as the work's cancellation handling — it waits for a blocking call to return, so it can't rescue one that hangs. |
 | `AppInfo` | `current` snapshot: `version`, `build`, `bundleId`, `displayName`; `isDebug`, `isSimulator`. |
 | `AppLanguage` | `available`, `current`, `setOverride(_:)`, `overrideRequiresRestart`. |
 
