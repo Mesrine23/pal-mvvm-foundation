@@ -4,6 +4,24 @@ Consumer-facing changes per release, newest first — **the** place for users an
 
 One tag versions all twelve products, so every entry opens with **`Affects:`** — the products that release touches. If you don't import them, you can skip the rest of the entry.
 
+## [1.5.3] — Unreleased
+
+**Affects:** PalPresentation
+
+A loader-ordering fix, and a documentation batch from adoption feedback on fully-local apps. No public API changed — `diagnose-api-breaking-changes` is clean against `v1.5.2`.
+
+### Fixed
+- **The newest load always wins.** `Loader` cancelled only the tasks its own `load(_:)` started, so an awaited `performLoad(_:)` or `refresh(_:)` that finished *after* a newer call overwrote the newer result — a slow `.task` load could replace what a retry had just loaded. Now whichever of `load`, `performLoad`, or `refresh` started last owns the state, and older results are discarded. `PagedLoader` gets the same guarantee, and a `performLoadMore()` started before a reload no longer appends to the reloaded list.
+- `cancel()` and `reset()` on both loaders now also discard an awaited load still in flight — previously one landing late could undo a `reset()`.
+
+### Documentation
+- **Fully-local apps read synchronously.** An on-device store's reads are now documented as synchronous — a `@MainActor` store over SwiftData's `mainContext`, `execute() throws -> T` use cases, and ViewModels that hold values, with no `Loader` (Getting Started, Architecture, DECISIONS, the adopter brief and plugin skills). `Loader` remains the runner for async work.
+- `@ModelActor` is documented for background work only, **created off the main thread**: on iOS 17 one initialized on the main thread runs all of its work there.
+- Refreshing a screen that stays visible while something else writes (under a sheet, on another tab): a store-owned change counter, beside the existing `.onAppear` idiom.
+- Views own their ViewModel with `@State` — sheet and `RouterView` destination closures re-run and would otherwise swap in a fresh one.
+- PalPersistence: `UserDefaultsService(defaults:)` for per-test suites, the public `DefaultsKey.name`, and that a key declared with a default never reads as `nil`.
+- `withTimeout(_:operation:)` waits for work that ignores cancellation before throwing, so it cannot rescue a blocking call.
+
 ## [1.5.2] — 2026-08-23
 
 **Affects:** documentation only

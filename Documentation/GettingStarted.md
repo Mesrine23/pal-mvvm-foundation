@@ -253,11 +253,101 @@ RouterView(router: router, root: .list) { route in   // `root` is a Route case �
 
 ### Fully-local apps (no networking)
 
-The offline path is as blessed as the API path — two complete apps have shipped on it:
+The offline path is as blessed as the API path — adopter apps have been built on it end to end. What changes is that **local reads are synchronous**: an on-device store answers at once, so there is nothing to await and no `Loader`.
 
-- **Take 5 of the 12 products:** Core, Presentation, Navigation, DesignSystem, Persistence. Dropping the rest is purely a link-time choice.
-- **SwiftData/Core Data goes behind `@ModelActor` repositories** — the recipe in [Architecture](ARCHITECTURE.md#adopting-pal-in-an-existing-app) is the implementation, step for step. Keep `Loader` for uniformity even though local reads rarely fail; after writes, re-fetch (`reloadOnReturn()` idiom in [PalPresentation](Products/PalPresentation.md)).
-- **Shared app state** (a selected week, a current filter — anything several screens steer) = a small `@MainActor @Observable` store over `UserDefaultsService` typed keys, created once by the container and injected like any dependency. Pal deliberately ships no global-state machinery.
+- **Take what you use:** typically Core, Navigation, DesignSystem, Persistence — plus Presentation only for work that is genuinely async (a background import, an optional network call). Dropping the rest is purely a link-time choice.
+- **Synchronous seams, one `@MainActor` store over SwiftData's main context, a ViewModel that holds values** — the same model `@Query` uses:
+
+```swift
+// Domain — nothing to await
+protocol NotesRepoProtocol: Sendable {
+    @MainActor func getNotes() throws -> [Note]
+    @MainActor func addNote(title: String) throws
+}
+
+protocol FetchNotesUseCaseProtocol: Sendable {
+    @MainActor func execute() throws -> [Note]
+}
+struct FetchNotesUseCase: FetchNotesUseCaseProtocol {
+    let notesRepo: any NotesRepoProtocol
+    @MainActor func execute() throws -> [Note] { try notesRepo.getNotes() }
+}
+```
+```swift
+// Data — one store backs the repo protocols
+import SwiftData
+
+@MainActor
+final class NotesStore: NotesRepoProtocol {
+    private let container: ModelContainer
+    private let changes: StoreChanges
+
+    nonisolated init(container: ModelContainer, changes: StoreChanges) {   // buildable from a nonisolated DI closure
+        self.container = container
+        self.changes = changes
+    }
+
+    func getNotes() throws -> [Note] {
+        try container.mainContext.fetch(FetchDescriptor<NoteModel>()).map { $0.toDomain() }   // @Model → domain struct
+    }
+
+    func addNote(title: String) throws {
+        container.mainContext.insert(NoteModel(title: title))
+        try container.mainContext.save()
+        changes.bump()                                   // after every successful write — never on a read
+    }
+}
+```
+```swift
+// Presentation — values, not a Loader: there is no loading state to get stuck in
+@MainActor @Observable
+final class NotesListViewModel {
+    private(set) var notes: [Note] = []
+    private(set) var loadFailed = false
+    private let fetchNotes: any FetchNotesUseCaseProtocol
+
+    init(fetchNotes: any FetchNotesUseCaseProtocol) {
+        self.fetchNotes = fetchNotes
+        reload()
+    }
+
+    func reload() {
+        do {
+            notes = try fetchNotes.execute()
+            loadFailed = false
+        } catch {
+            loadFailed = true
+        }
+    }
+}
+```
+
+- **Refresh from the store, not from the writer.** A write can come from a sheet over the list or from another tab, where `.onAppear` never fires — so the store bumps a change counter after every successful write, and every screen showing stored data reloads on it. No writer has to know its readers:
+
+```swift
+@MainActor @Observable
+final class StoreChanges {                 // declare it in Domain, so the store can reach it
+    private(set) var version = 0
+    nonisolated init() {}
+    func bump() { version += 1 }
+}
+
+struct NotesListView: View {
+    @State private var viewModel: NotesListViewModel
+    @Environment(StoreChanges.self) private var changes    // one instance, injected with `.environment(changes)`
+
+    init(viewModel: NotesListViewModel) { _viewModel = State(initialValue: viewModel) }
+
+    var body: some View {
+        List(viewModel.notes) { note in Text(note.title) }
+            .onChange(of: changes.version) { viewModel.reload() }
+    }
+}
+```
+
+- **The View owns its ViewModel with `@State`**, as above. Destination and `.sheet` closures re-run on unrelated re-renders and build a fresh ViewModel each time; `@State` keeps the first, where a plain `let` would swap in the new one and drop the screen's state mid-edit.
+- **Background work is the exception** — a large import or export belongs on a `@ModelActor`, awaited through a `Loader` like network work, and created off the main thread (details in [Architecture](ARCHITECTURE.md#adopting-pal-in-an-existing-app)).
+- **Shared app state** (a selected week, a current filter — anything several screens steer) = a small `@MainActor @Observable` store over `UserDefaultsService` typed keys, created once and injected like any dependency. Pal deliberately ships no global-state machinery. If your app ever **rebuilds its container** (to reopen the store, say), create these stores one level up, in the app shell, so they survive the rebuild.
 
 ## Updating the foundation while building your app
 

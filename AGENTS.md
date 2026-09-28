@@ -59,7 +59,7 @@ A change is finished only when every line below holds. Do not report completion 
 Hard stops. If one of these looks necessary, stop and ask the owner.
 
 - **Never merge a branch yourself.** Push the `feature/*`/`hotfix/*` branch and ask. Never commit features directly to `main`.
-- **Never add a dependency** to `Package.swift`, and never add an edge to the [dependency DAG](#package-dependency-dag-enforced).
+- **Never add a dependency** to `Package.swift`, and never add an edge to the [dependency DAG](#package-dependency-dag-enforced--never-add-edges).
 - **Never rename a foundation protocol to add a `…Protocol` suffix** (see [Naming conventions](#naming-conventions-scoped--binding)).
 - **Never delete or rename a public symbol** pre-major — deprecate with `@available` and forward.
 - **Never put a value in the foundation** — endpoints, user-facing strings, brand tokens, storage keys, analytics events, environments, validation rules. See [the law](#the-law-of-the-codebase).
@@ -107,7 +107,7 @@ Every target declares ALL modules it directly imports (no transitive reliance). 
 
 ## The canonical per-screen pattern
 
-Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Value>` (each drives a `ViewState`: `idle / loading(previous:) / loaded / failed(error, previous:)`); call `loader.load { }` (auto-cancels the previous in-flight load, swallows cancellation, maps to `PresentableError`); the View switches on `viewModel.‹loader›.state`. Navigation goes through the screen's `NavigationDelegate`, implemented by the feature coordinator as one-liners over the typed `Router`. Dependencies arrive via `init` (constructor injection from the app-side factory). Load failures → `ViewState`; action failures → `.appAlert`; action confirmations → `.appToast`.
+Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Value>` (each drives a `ViewState`: `idle / loading(previous:) / loaded / failed(error, previous:)`); call `loader.load { }` (auto-cancels the previous in-flight load, swallows cancellation, maps to `PresentableError`); the View switches on `viewModel.‹loader›.state` and owns its ViewModel with `@State`. A synchronous local read skips the `Loader` — the ViewModel holds the value ([DECISIONS §6](Documentation/DECISIONS.md)). Navigation goes through the screen's `NavigationDelegate`, implemented by the feature coordinator as one-liners over the typed `Router`. Dependencies arrive via `init` (constructor injection from the app-side factory). Load failures → `ViewState`; action failures → `.appAlert`; action confirmations → `.appToast`.
 
 ## Patterns & evolution (binding)
 

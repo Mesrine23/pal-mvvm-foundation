@@ -11,6 +11,8 @@ description: Conventions for an app built on the Pal iOS foundation — mechanis
 
 A screen's state comes from a `Loader<Value>` held by a `@MainActor @Observable` ViewModel, driving a `ViewState` the View switches on: `idle / loading(previous:) / loaded / failed(error, previous:)`. Do not add `isLoading` flags or error booleans alongside it.
 
+**Local reads are the exception:** an on-device store (SwiftData's `mainContext`, `UserDefaults`) answers at once — keep its repository and use case synchronous and let the ViewModel hold the value, with no `Loader`. `reference/ADOPTERS.md` links the worked example.
+
 - `loader.load { }` — fire and forget; cancels the previous in-flight load, swallows cancellation, maps failures to `PresentableError`.
 - `loader.performLoad { }` — the awaitable form, for `.task { }` and tests.
 - `loader.refresh { }` — reload in place without entering `.loading` (pull-to-refresh, where the control is the indicator).
@@ -34,7 +36,7 @@ Never write `NetworkClientProtocol`, `TokenStoreProtocol`, or `RouterProtocol` �
 
 ## Wiring
 
-Dependencies reach a ViewModel through `init`, from a factory method on the app's composition root. Pal ships no DI framework and no global state; a shared store is a small `@MainActor @Observable` object over `UserDefaultsService` typed keys, created once by the container and injected like anything else.
+Dependencies reach a ViewModel through `init`, from a factory method on the app's composition root. The View owns it with `@State private var viewModel` (set once in `init`) — sheet and destination closures re-run and would otherwise swap in a fresh one. Pal ships no DI framework and no global state; a shared store is a small `@MainActor @Observable` object over `UserDefaultsService` typed keys, created once by the container and injected like anything else.
 
 ## Before you reach for a Pal change
 

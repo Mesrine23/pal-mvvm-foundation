@@ -9,6 +9,12 @@ import Foundation
 /// swallow cancellation, and cancel a superseded in-flight load on re-trigger.
 /// `state` is read-only to the outside — only the loader mutates it.
 ///
+/// **The newest call always wins.** Whichever of ``load(_:)``,
+/// ``performLoad(_:)``, or ``refresh(_:)`` started last owns the result; an
+/// older call that finishes later — a slow `.task` load overtaken by a retry —
+/// never overwrites it. ``cancel()`` and ``reset()`` discard every in-flight
+/// result the same way.
+///
 /// ```swift
 /// @MainActor @Observable
 /// final class HomeViewModel {
@@ -27,6 +33,7 @@ public final class Loader<Value: Sendable> {
     public private(set) var state: ViewState<Value> = .idle
 
     private var task: Task<Void, Never>?
+    private var generation = 0
 
     /// Creates an idle loader.
     public init() {}
@@ -35,16 +42,16 @@ public final class Loader<Value: Sendable> {
     /// in-flight load first. Fire-and-forget — call from buttons, delegates, or
     /// `onAppear`. Owns re-trigger cancellation (search-as-you-type, rapid refresh).
     public func load(_ operation: @escaping @Sendable () async throws -> Value) {
-        task?.cancel()
+        let generation = supersede()
         state = .loading(previous: state.value)
         task = Task { [weak self] in
             do {
                 let value = try await operation()
-                guard !Task.isCancelled else { return }
-                self?.state = .loaded(value)
+                guard let self, self.isCurrent(generation) else { return }
+                self.state = .loaded(value)
             } catch is CancellationError {
             } catch {
-                guard !Task.isCancelled, let self else { return }
+                guard let self, self.isCurrent(generation) else { return }
                 self.state = .failed(PresentableError(from: error), previous: self.state.value)
             }
         }
@@ -53,17 +60,9 @@ public final class Loader<Value: Sendable> {
     /// The awaitable variant for `.task { }` integration: the view's lifecycle
     /// cancels the work when the view disappears.
     public func performLoad(_ operation: @escaping @Sendable () async throws -> Value) async {
-        task?.cancel()
+        let generation = supersede()
         state = .loading(previous: state.value)
-        do {
-            let value = try await operation()
-            guard !Task.isCancelled else { return }
-            state = .loaded(value)
-        } catch is CancellationError {
-        } catch {
-            guard !Task.isCancelled else { return }
-            state = .failed(PresentableError(from: error), previous: state.value)
-        }
+        await run(operation, generation: generation)
     }
 
     /// Reloads in place for **pull-to-refresh**: it does *not* enter `.loading`
@@ -73,22 +72,17 @@ public final class Loader<Value: Sendable> {
     /// instead fights the refresh control ("change the refresh control while it is
     /// not idle") and can drop the first update.
     public func refresh(_ operation: @escaping @Sendable () async throws -> Value) async {
-        task?.cancel()
-        do {
-            let value = try await operation()
-            guard !Task.isCancelled else { return }
-            state = .loaded(value)
-        } catch is CancellationError {
-        } catch {
-            guard !Task.isCancelled else { return }
-            state = .failed(PresentableError(from: error), previous: state.value)
-        }
+        let generation = supersede()
+        await run(operation, generation: generation)
     }
 
-    /// Cancels any in-flight load without changing state.
+    /// Cancels any in-flight load without changing state. An awaited
+    /// ``performLoad(_:)`` or ``refresh(_:)`` still running is not interrupted,
+    /// but its result is discarded.
     public func cancel() {
         task?.cancel()
         task = nil
+        generation &+= 1
     }
 
     /// Cancels any in-flight load and returns to `.idle` — the affordance behind
@@ -98,5 +92,27 @@ public final class Loader<Value: Sendable> {
     public func reset() {
         cancel()
         state = .idle
+    }
+
+    private func supersede() -> Int {
+        task?.cancel()
+        generation &+= 1
+        return generation
+    }
+
+    private func isCurrent(_ generation: Int) -> Bool {
+        !Task.isCancelled && generation == self.generation
+    }
+
+    private func run(_ operation: @Sendable () async throws -> Value, generation: Int) async {
+        do {
+            let value = try await operation()
+            guard isCurrent(generation) else { return }
+            state = .loaded(value)
+        } catch is CancellationError {
+        } catch {
+            guard isCurrent(generation) else { return }
+            state = .failed(PresentableError(from: error), previous: state.value)
+        }
     }
 }

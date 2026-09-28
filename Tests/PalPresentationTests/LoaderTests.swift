@@ -118,4 +118,105 @@ struct LoaderTests {
             return
         }
     }
+
+    // MARK: - The newest call wins
+
+    @Test("An older performLoad finishing after a newer load never overwrites it")
+    func olderPerformLoadNeverOverwritesNewerLoad() async {
+        let loader = Loader<String>()
+        let release = Gate()
+        let older = Task { await loader.performLoad { await release.wait(); return "older" } }
+        await waitUntil { loader.state.isLoading }
+
+        loader.load { "newer" }
+        await waitUntil { loader.state.value == "newer" }
+        await release.open()
+        await older.value
+
+        #expect(loader.state.value == "newer")
+    }
+
+    @Test("An older refresh finishing after a newer load never overwrites it")
+    func olderRefreshNeverOverwritesNewerLoad() async {
+        let loader = Loader<String>()
+        await loader.performLoad { "first" }
+        let started = Gate()
+        let release = Gate()
+        let older = Task { await loader.refresh { await started.open(); await release.wait(); return "older" } }
+        await started.wait()
+
+        loader.load { "newer" }
+        await waitUntil { loader.state.value == "newer" }
+        await release.open()
+        await older.value
+
+        #expect(loader.state.value == "newer")
+        #expect(loader.state.isLoading == false)
+    }
+
+    @Test("An older load failing after a newer one succeeded leaves the content loaded")
+    func olderFailureNeverOverwritesNewerSuccess() async {
+        let loader = Loader<String>()
+        let release = Gate()
+        let older = Task { await loader.performLoad { await release.wait(); throw SampleError() } }
+        await waitUntil { loader.state.isLoading }
+
+        loader.load { "newer" }
+        await waitUntil { loader.state.value == "newer" }
+        await release.open()
+        await older.value
+
+        #expect(loader.state.value == "newer")
+        #expect(loader.state.error == nil)
+    }
+
+    @Test("The newest of two awaited performLoads wins")
+    func newestPerformLoadWins() async {
+        let loader = Loader<String>()
+        let release = Gate()
+        let older = Task { await loader.performLoad { await release.wait(); return "older" } }
+        await waitUntil { loader.state.isLoading }
+
+        await loader.performLoad { "newer" }
+        await release.open()
+        await older.value
+
+        #expect(loader.state.value == "newer")
+    }
+
+    @Test("reset discards an awaited performLoad still in flight")
+    func resetDiscardsAwaitedLoad() async {
+        let loader = Loader<String>()
+        let release = Gate()
+        let pending = Task { await loader.performLoad { await release.wait(); return "late" } }
+        await waitUntil { loader.state.isLoading }
+
+        loader.reset()
+        await release.open()
+        await pending.value
+
+        guard case .idle = loader.state else {
+            Issue.record("A discarded performLoad overwrote the reset state: \(loader.state)")
+            return
+        }
+    }
+
+    @Test("cancel discards an awaited performLoad and keeps the state")
+    func cancelDiscardsAwaitedLoad() async {
+        let loader = Loader<String>()
+        await loader.performLoad { "first" }
+        let release = Gate()
+        let pending = Task { await loader.performLoad { await release.wait(); return "late" } }
+        await waitUntil { loader.state.isLoading }
+
+        loader.cancel()
+        await release.open()
+        await pending.value
+
+        guard case .loading(let previous) = loader.state else {
+            Issue.record("Expected cancel to keep .loading, got \(loader.state)")
+            return
+        }
+        #expect(previous == "first")
+    }
 }

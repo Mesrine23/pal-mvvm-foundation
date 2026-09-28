@@ -8,6 +8,11 @@ import Foundation
 /// Unlike `Loader`, the operation is injected at `init`: the loader must
 /// re-invoke it with successive cursors (`nil` = first page).
 ///
+/// As with `Loader`, **the newest first-page call wins**: whichever of
+/// ``load()``, ``performLoad()``, or ``refresh()`` started last owns the list,
+/// and a load-more started before that reload never appends to it. ``cancel()``
+/// discards every in-flight result the same way.
+///
 /// ```swift
 /// @MainActor @Observable
 /// final class PostsViewModel {
@@ -46,6 +51,7 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
     private var isLoadingFirstPage = false
     private var task: Task<Void, Never>?
     private var loadMoreTask: Task<Void, Never>?
+    private var generation = 0
 
     /// Creates a paged loader over the page-fetching operation.
     /// - Parameter operation: Fetches one page for a cursor (`nil` = the first page).
@@ -56,27 +62,27 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
     /// Loads (or reloads) the first page through the state machine, cancelling
     /// any in-flight work first. Fire-and-forget — buttons, delegates, retry.
     public func load() {
-        beginFirstPage()
+        let generation = beginFirstPage()
         state = .loading(previous: state.value)
         task = Task { [weak self] in
-            await self?.runFirstPage()
+            await self?.runFirstPage(generation: generation)
         }
     }
 
     /// The awaitable first-page variant for `.task { }` integration: the view's
     /// lifecycle cancels the work when the view disappears.
     public func performLoad() async {
-        beginFirstPage()
+        let generation = beginFirstPage()
         state = .loading(previous: state.value)
-        await runFirstPage()
+        await runFirstPage(generation: generation)
     }
 
     /// Reloads from the first page for **pull-to-refresh**: no `.loading`
     /// transition (the refresh control is the indicator), current items stay
     /// visible until the fresh first page replaces them.
     public func refresh() async {
-        beginFirstPage()
-        await runFirstPage()
+        let generation = beginFirstPage()
+        await runFirstPage(generation: generation)
     }
 
     /// Fetches the next page and appends it. Fire-and-forget — trigger it from
@@ -86,21 +92,25 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
     public func loadMore() {
         guard let current = beginLoadMore() else { return }
         let cursor = nextCursor
+        let generation = self.generation
         loadMoreTask = Task { [weak self] in
-            await self?.runLoadMore(from: current, cursor: cursor)
+            await self?.runLoadMore(from: current, cursor: cursor, generation: generation)
         }
     }
 
     /// The awaitable next-page variant, mirroring ``performLoad()``: same guards
     /// and state transitions as ``loadMore()``, but callers await completion —
     /// no polling of ``isLoadingMore`` in tests, tools, or prefetching flows.
-    /// Cancellation rides the caller's task (not ``cancel()``).
+    /// Cancellation rides the caller's task; ``cancel()`` doesn't interrupt it but
+    /// discards its result.
     public func performLoadMore() async {
         guard let current = beginLoadMore() else { return }
-        await runLoadMore(from: current, cursor: nextCursor)
+        await runLoadMore(from: current, cursor: nextCursor, generation: generation)
     }
 
-    /// Cancels any in-flight work without changing state.
+    /// Cancels any in-flight work without changing state. An awaited
+    /// ``performLoad()``, ``refresh()``, or ``performLoadMore()`` still running
+    /// is not interrupted, but its result is discarded.
     public func cancel() {
         task?.cancel()
         task = nil
@@ -108,14 +118,21 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
         loadMoreTask = nil
         isLoadingFirstPage = false
         isLoadingMore = false
+        generation &+= 1
     }
 
-    private func beginFirstPage() {
+    private func beginFirstPage() -> Int {
         task?.cancel()
         loadMoreTask?.cancel()
         isLoadingFirstPage = true
         isLoadingMore = false
         loadMoreError = nil
+        generation &+= 1
+        return generation
+    }
+
+    private func isCurrent(_ generation: Int) -> Bool {
+        !Task.isCancelled && generation == self.generation
     }
 
     private func beginLoadMore() -> [Item]? {
@@ -125,33 +142,33 @@ public final class PagedLoader<Item: Sendable, Cursor: Sendable> {
         return current
     }
 
-    private func runLoadMore(from current: [Item], cursor: Cursor?) async {
+    private func runLoadMore(from current: [Item], cursor: Cursor?, generation: Int) async {
         do {
             let page = try await operation(cursor)
-            guard !Task.isCancelled else { return }
+            guard isCurrent(generation) else { return }
             state = .loaded(current + page.items)
             nextCursor = page.nextCursor
             hasMore = page.nextCursor != nil
             isLoadingMore = false
         } catch is CancellationError {
         } catch {
-            guard !Task.isCancelled else { return }
+            guard isCurrent(generation) else { return }
             loadMoreError = PresentableError(from: error)
             isLoadingMore = false
         }
     }
 
-    private func runFirstPage() async {
+    private func runFirstPage(generation: Int) async {
         do {
             let page = try await operation(nil)
-            guard !Task.isCancelled else { return }
+            guard isCurrent(generation) else { return }
             state = .loaded(page.items)
             nextCursor = page.nextCursor
             hasMore = page.nextCursor != nil
             isLoadingFirstPage = false
         } catch is CancellationError {
         } catch {
-            guard !Task.isCancelled else { return }
+            guard isCurrent(generation) else { return }
             state = .failed(PresentableError(from: error), previous: state.value)
             isLoadingFirstPage = false
         }
