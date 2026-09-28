@@ -13,3 +13,23 @@ func waitUntil(timeout: Duration = .seconds(2), _ condition: () -> Bool) async {
         try? await Task.sleep(for: .milliseconds(5))
     }
 }
+
+/// A one-shot latch that orders async test steps without sleeping: `wait()`
+/// suspends until `open()` is called, or returns at once if it already was.
+/// Lets a test hold an operation mid-flight, start a competing load, then
+/// release the first one on cue.
+actor Gate {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        if isOpen { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        waiters.forEach { $0.resume() }
+        waiters.removeAll()
+    }
+}

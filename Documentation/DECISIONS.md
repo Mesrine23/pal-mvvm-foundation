@@ -19,7 +19,7 @@
 | Language mode | **Swift 6, strict concurrency**, from the first line |
 | swift-tools-version | **6.0** (not bleeding edge; newer features later behind `#if compiler`) |
 | Deployment floor | **iOS 17** for the package (Example app may target latest) |
-| External dependencies | **ZERO.** Swinject appears only app-side (Example app + docs snippets) |
+| External dependencies | **ZERO.** Swinject appears only app-side (docs snippets — the Example wires by hand) |
 | Versioning | SemVer via git tags — **`v1.0.0` shipped 2026-07-02** (all 11 products, two dogfood apps). Breaking = major with deprecation-first (§19), enforced by the `api-stability` CI gate; consumers pin tags with `from:` |
 | Repo visibility | Public (MIT) |
 | License | **MIT** |
@@ -43,7 +43,7 @@ Products and their **only allowed** dependencies (downward only, enforced in `Pa
 | `PalDebugKit` | Core, Networking, Persistence (NOT DesignSystem — debug UI is self-contained) |
 | `PalNotifications` | Core (+ the system `UserNotifications` framework) |
 | `PalWeb` | Core, Presentation (+ the system `WebKit` framework) |
-| `Example` app | everything + Swinject (app-side) |
+| `Example` app | everything (manual DI — no Swinject) |
 
 Rules:
 - Every target declares **all modules it directly imports** — never rely on transitive visibility.
@@ -84,16 +84,17 @@ Rules:
 - **Canonical vertical slice** (the reference pattern for every feature):
   - **Domain** (pure): entity (`User`) · repo protocol (`UsersRepoProtocol`) · use case (`FetchUsersUseCase: FetchUsersUseCaseProtocol`, single `execute`).
   - **Data** (Domain + PalNetworking): `UserDTO: Decodable` + `toDomain()` mapping · `Request` factories live HERE (return `Request<…DTO>`) · `UsersRepository` calls `NetworkClient.send`, maps DTO→entity.
-  - **Presentation** (Domain only): `@MainActor @Observable` ViewModel holding one or more `Loader<…>` (each drives a `ViewState`); SwiftUI View switches on `viewModel.‹loader›.state`.
+  - **Presentation** (Domain only): `@MainActor @Observable` ViewModel holding one or more `Loader<…>` (each drives a `ViewState`); SwiftUI View switches on `viewModel.‹loader›.state`. `Loader` is for **async** content — a synchronous local read skips it (*Local data* below).
   - **Composition root** (app shell): wires client → repo → use case → ViewModel.
 - **Multi-call screens:** a composing use case returns a composite content model; parallel via `async let`, sequential `await` where data-dependent; structured concurrency auto-cancels siblings on failure. ViewModel stays a one-line `loader.load {}`.
 - **Partial-failure screens:** composite model fields typed `Result<Value, PresentableError>`; the use case wraps optional topics; View renders per-topic content or an inline `SectionErrorView`. Critical call still throws → whole screen fails. Default retry re-runs the whole composition.
 - **Delegation (child → owner):** when a child must report back to the owner that presents it (navigation, flow completion), use a `‹Context›Delegate` — `@MainActor`, `AnyObject`, held **weak**, intent-named methods. It is the default over passing closures or `Binding`s upward. A **closure** suffices for a single one-shot callback; an **`AsyncStream`** carries broadcast events (e.g. `AuthEvent`), not a delegate. Navigation seams keep the `‹Screen›NavigationDelegate` name (§4).
-- **Local mutation (re-fetch after write):** a local store has no `@Query`; after a write through the repository, re-fetch to reflect the change (coordinator → list VM `refresh()`). Keeps one source of truth and the read path unchanged.
+- **Local mutation (re-fetch after write):** a local store has no `@Query`; after a write through the repository, re-fetch to reflect the change. Trigger: the view's `.onAppear` for a screen you return to; an app-side change counter the store bumps after every successful write for screens that stay visible (under a sheet, on another tab) — writers never wire themselves to readers. Keeps one source of truth and the read path unchanged.
+- **Local data (ruled 2026-09-28):** reads from an on-device store are **synchronous** — a `@MainActor` store over SwiftData's `mainContext` (the model `@Query` uses) behind the repo protocols, `execute() throws -> T` use cases, ViewModels holding plain values and a failure flag. Awaiting data that is already on disk buys nothing and adds a loading state that can get stuck; an adopter's async `@ModelActor` + `Loader` home screen did exactly that in the field. `Loader` stays the runner for async work; a `@ModelActor` is for background work only (imports, exports), created off the main thread — on iOS 17 one initialized on the main thread runs all of its work there.
 
 ## 7. DI & composition (app-side pattern — NOT in the foundation)
 
-- Pattern = **constructor injection everywhere**; the app's composition root wires dependencies. Swinject (native `Assembly`/`Assembler`, single root container) is the demonstrated approach in `Example/`; plain manual wiring is the documented alternative.
+- Pattern = **constructor injection everywhere**; the app's composition root wires dependencies. Plain manual wiring is what `Example/` demonstrates (and Getting Started shows); Swinject (native `Assembly`/`Assembler`, single root container) is the documented option for larger apps.
 - Registration against protocols (`…RepoProtocol → …Repository`, `…UseCaseProtocol → …UseCase`). Object scopes: transient/graph default; `.container` for deliberate singletons (e.g. `NetworkClient`).
 - **Factories** (app-side, per feature) resolve use cases and constructor-inject ViewModels. The factory is the only place that touches the container. `resolver.resolve(X.self)!` force-unwrap is the sanctioned fail-fast exception.
 - Swift 6 notes: composition root + factories are `@MainActor`; `@preconcurrency import Swinject` is expected.

@@ -1,6 +1,6 @@
 # PalPresentation
 
-> The per-screen contract every ViewModel uses: a four-case state, a presentable error, and an owned async runner. Kills the per-VM flag-zoo (`isLoading` / `showError` / `errorMessage` …). Dependencies: PalCore.
+> The per-screen contract for content that loads asynchronously: a four-case state, a presentable error, and an owned async runner. Kills the per-VM flag-zoo (`isLoading` / `showError` / `errorMessage` …). Dependencies: PalCore.
 
 `import PalPresentation`
 
@@ -42,6 +42,7 @@ case .failed(let error, previous: let value?): content(value)   // + banner over
 ## What `Loader.load { }` does for you
 
 - Cancels the previous in-flight load (re-trigger dedupe — search-as-you-type, rapid refresh).
+- **The newest call wins** across `load`, `performLoad`, and `refresh`: an older call that finishes later — a slow `.task` load overtaken by a retry — never overwrites the newer result. `cancel()` and `reset()` discard in-flight results the same way.
 - Sets `.loading(previous:)`, then `.loaded` or `.failed(PresentableError, previous:)`.
 - **Swallows `CancellationError`** (cancellation never reaches the user).
 - Holds `self` weakly; `state` is `private(set)` (only the loader mutates it).
@@ -88,7 +89,7 @@ final class PostsViewModel {
 ```
 
 - The operation is **injected at `init`** (deliberate asymmetry vs `Loader`): the loader re-invokes it with successive cursors — `nil` means first page; your `Page(items:nextCursor:)` supplies the next cursor (`nil` = the end, disarming `hasMore`).
-- First page = the familiar trio: `load()` / `performLoad()` (for `.task`) / `refresh()` (pull-to-refresh, no `.loading`, restarts from page one).
+- First page = the familiar trio: `load()` / `performLoad()` (for `.task`) / `refresh()` (pull-to-refresh, no `.loading`, restarts from page one). As with `Loader`, the newest of them wins, and a load-more started before a reload never appends to the reloaded list.
 - **`loadMore()`** appends the next page — fire-and-forget, self-deduping (no-ops while any fetch is in flight, before the first page, or after the last). Trigger it from the appearance of the **trailing footer row that sits outside the `ForEach`** — the canonical pattern, shown in [Getting Started](../GettingStarted.md). **`performLoadMore() async`** is the awaitable sibling (same guards and transitions) for tests, tools, and prefetching flows that need to await completion instead of polling `isLoadingMore`.
 - **A failed load-more never touches the list**: items stay, `loadMoreError` drives an inline footer retry (which just calls `loadMore()` again — it clears the error). Only first-page failures go through `ViewState.failed`.
 - Footer contract: `isLoadingMore` → spinner · `loadMoreError` → retry · `hasMore == false` → nothing (or an end-of-list note).
@@ -140,8 +141,11 @@ func reloadOnReturn() {
 // in the View: .onAppear { viewModel.reloadOnReturn() }
 ```
 
+`.onAppear` only fires when the screen comes **back** into view. A screen that stays visible while something else writes — under an editor sheet, or on another tab — needs the store to signal the change instead: see the change counter in [Getting Started](../GettingStarted.md#fully-local-apps-no-networking).
+
 ## Notes
 
+- **Not for instant local reads.** A synchronous on-device store (SwiftData's `mainContext`, `UserDefaults`, a bundled file) needs no `Loader` — the ViewModel holds the value. See *Fully-local apps* in [Getting Started](../GettingStarted.md#fully-local-apps-no-networking).
 - Channel split: **LOAD** failures → `ViewState` (full error or banner over stale data); **ACTION** failures (screen keeps its data) → `.appAlert` (DesignSystem). A ViewModel owning `alert: AppAlert?` / `toast: AppToast?` imports PalDesignSystem for exactly that — the **blessed shape** (layer rule 10).
 - Default strings for `PresentableError` ship localized (en + el); override per error as needed.
 

@@ -109,6 +109,7 @@ struct UsersTab: View {
 ```
 
 - ViewModels hold their delegate **weak**, so someone must own the coordinator — `@State` at the tab root (or a parent coordinator) keeps it alive.
+- **Each screen owns its ViewModel with `@State`** (`@State private var viewModel`, set once in `init` via `State(initialValue:)`). The destination closure re-runs whenever the stack re-renders — a keyboard appearing is enough — and calls the factory again; `@State` keeps the first instance, where a plain `let` would swap in the fresh one mid-edit and drop the screen's state. The same holds for `.sheet(item:)` content.
 - **A small feature may merge the factory into the coordinator** (one `view(for:)` on the coordinator — the Example app's `AppCoordinator` does exactly this). Split them the moment the switch or the DI wiring grows; the split type keeps the `‹Feature›DestinationFactory` name.
 - The **Coordinator** Xcode template (`Templates/Xcode/`) scaffolds the merged shape.
 

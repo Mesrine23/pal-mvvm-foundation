@@ -7,7 +7,7 @@
 ## What it gives you
 
 - **`KeychainService`** — throwing, typed Keychain access for secrets.
-- **`UserDefaultsService`** — plist-native key/value storage.
+- **`UserDefaultsService`** — plist-native key/value storage over `.standard` or any suite: `UserDefaultsService(defaults: UserDefaults = .standard)`. It conforms to `DefaultsStorage`, the protocol to depend on when a fake should stand in.
 - **Typed keys** — `KeychainKey<Value>` / `DefaultsKey<Value>` / `CacheKey<Value>`: the value type travels with the key, so reads and writes are compile-time checked. Initializers: `DefaultsKey(_ name: String, default: Value? = nil)` · `KeychainKey(service: String, account: String, accessibility: KeychainAccessibility = .afterFirstUnlock)` · `CacheKey(_ name: String, ttl: Duration)`.
 - **`MemoryCache`** — an actor with passive per-key TTL; **memory-only by policy** (nothing survives an app launch).
 
@@ -52,6 +52,20 @@ let cached = await cache.get(.users)                   // nil if absent OR expir
 await cache.clear()                                     // e.g. on logout
 ```
 
+## Testing with a private suite
+
+Give each test its own `UserDefaults` suite instead of sharing `.standard` — no `.serialized` suites, no rules about which test may write which key:
+
+```swift
+@Test func remembersOnboarding() throws {
+    let suiteName = "tests.\(UUID().uuidString)"
+    let suite = try #require(UserDefaults(suiteName: suiteName))
+    defer { suite.removePersistentDomain(forName: suiteName) }
+    let defaults = UserDefaultsService(defaults: suite)
+    // … exercise the code under test with `defaults`
+}
+```
+
 ## Cache-aside pattern (recommended repository usage)
 
 ```swift
@@ -65,6 +79,8 @@ func getUsers(forceRefresh: Bool = false) async throws -> [User] {
 
 ## Notes
 
+- **A key declared with `default:` never reads as `nil`** — `get` returns the default when nothing is stored, so it can't tell "never set" from "set to the default". When absence itself matters (a first-run gate, a preference that may only sync once the user chose it), declare the key **without** a default and treat `nil` as unset.
+- **`DefaultsKey.name` is public** — the raw key string, for code that must address the same entry outside `UserDefaultsService` (`@AppStorage`, mirroring to `NSUbiquitousKeyValueStore`).
 - **`MemoryCache` is memory-only by design** — no disk persistence, no stale sensitive data on disk, no cross-launch surprises. Pairs with `ViewState.loading(previous:)` for stale-while-revalidate.
 - **Passive TTL** — expiry is evaluated on `get` (delete-on-read). No sweepers, no timers, lifecycle-immune.
 - `KeychainKey` sets `kSecAttrAccessible` explicitly (default `.afterFirstUnlock`, configurable via `KeychainAccessibility`).

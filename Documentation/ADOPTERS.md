@@ -7,7 +7,7 @@
      adopter's own AGENTS.md, and the plugin's reference/ — and only absolute links work in all three.
      Do not "tidy" them into relative paths. -->
 
-> **Written for Pal `v1.5.2`.** Check yours: the tag in your `Package.resolved`, or `AppInfo` at runtime.
+> **Written for Pal `v1.5.3`.** Check yours: the tag in your `Package.resolved`, or `AppInfo` at runtime.
 
 **Copy the body of this file into your app's `AGENTS.md` under a `## Pal` heading** (or install the [`pal-adopter` plugin](https://github.com/Mesrine23/pal-mvvm-foundation/tree/main/plugins/pal-adopter), which ships it for you). It is deliberately short — it has to fit inside *your* app's instruction budget alongside your own rules.
 
@@ -37,7 +37,7 @@ Pal also cannot ship your `@main`, root scene, `Info.plist`, entitlements, or co
 | Push + local notifications | `PalNotifications` | [→](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/Products/PalNotifications.md) |
 | Embedded web pages, external-link opening | `PalWeb` | [→](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/Products/PalWeb.md) |
 
-Import only what you use — each product declares its own dependencies. A fully-offline app typically takes five: Core, Presentation, Navigation, DesignSystem, Persistence.
+Import only what you use — each product declares its own dependencies. A fully-offline app typically takes Core, Navigation, DesignSystem, and Persistence — plus Presentation only for work that is genuinely async.
 
 ## The shape of a screen
 
@@ -50,6 +50,8 @@ Every screen is the same slice — **View → ViewModel → UseCase → Reposito
 - Dependencies arrive via `init`, from a factory method on your composition root.
 
 **Three channels, don't mix them:** load failures go to `ViewState`; action failures go to `.appAlert`; action confirmations go to `.appToast`.
+
+**Local data is the exception.** An on-device read — SwiftData's `mainContext`, `UserDefaults`, a bundled file — answers at once: make the repository and use case synchronous (`execute() throws -> T`) and let the ViewModel hold the value, with no `Loader`. `Loader` is for work that can be slow or fail. Keep `@ModelActor` for background work (imports, exports) and create it off the main thread — on iOS 17 one initialized on the main thread runs there. Worked example, including refreshing screens after a write: [Fully-local apps](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#fully-local-apps-no-networking).
 
 One screen firing several calls that finish together needs **one** `Loader` over a composite value, not one per call. Give a section its own `Loader` only when it reloads independently. The worked examples are in [GettingStarted](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#4-your-first-feature-the-canonical-vertical-slice).
 
@@ -65,6 +67,7 @@ Xcode file templates for all three are in [`Templates/Xcode/`](https://github.co
 
 ## Gotchas that cost the most time
 
+- **Own the ViewModel with `@State`.** `@State private var viewModel`, set once in `init`. `.sheet`, `navigationDestination`, and `RouterView` destination closures re-run on unrelated re-renders — a keyboard appearing is enough — and build a fresh ViewModel; a plain `let` hands it to the screen mid-edit and drops the screen's state.
 - **Main-actor-default isolation.** If your app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` (Xcode 26's default for new projects), mark Domain and Data value types `nonisolated` so DTOs decode and entities construct off the main actor.
 - **Never edit Pal in DerivedData.** A pinned dependency is checked out read-only; edits there are untracked and vanish on the next resolve. To change the foundation, edit its repo — the local-override loop is in [GettingStarted](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#updating-the-foundation-while-building-your-app).
 - **Pin a tag, never a branch.** SemVer is CI-enforced since `1.0.0`, so `from:` is safe and minors never break you. A branch pin chases a moving commit with no contract.

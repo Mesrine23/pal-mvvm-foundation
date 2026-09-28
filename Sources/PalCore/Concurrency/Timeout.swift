@@ -10,6 +10,13 @@ public struct TimeoutError: Error, Sendable, Equatable {
 /// Runs an async operation with a deadline, throwing ``TimeoutError`` if it does not
 /// complete in time. The losing side is cancelled via structured concurrency.
 ///
+/// The deadline is only as prompt as the operation's response to cancellation:
+/// structured concurrency waits for the cancelled operation to return before
+/// `withTimeout` throws. Cancellation-aware work (`URLSession`, `Task.sleep`) stops
+/// at once; work that never checks for cancellation — a blocking call, a stuck
+/// lock — runs to completion first, so `withTimeout` cannot rescue an operation
+/// that hangs.
+///
 /// ```swift
 /// let value = try await withTimeout(.seconds(5)) {
 ///     try await someSlowOperation()

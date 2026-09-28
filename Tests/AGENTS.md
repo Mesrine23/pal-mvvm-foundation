@@ -15,11 +15,12 @@ The rule that costs the most when broken: a test that fires work, sleeps a fixed
 
 - `await` the awaitable sibling (`performLoad`, `performLoadMore`) wherever one exists;
 - rely on transitions that are documented as **synchronous** — `load(_:)` enters `.loading(previous:)` before it returns, so re-trigger checks need no waiting at all;
-- otherwise poll the observable state with `waitUntil { … }` (`Tests/PalPresentationTests/AsyncTestSupport.swift`) and a generous timeout.
+- otherwise poll the observable state with `waitUntil { … }` (`Tests/PalPresentationTests/AsyncTestSupport.swift`) and a generous timeout;
+- to order competing loads, hold one mid-flight with a `Gate` (same file) and release it on cue.
 
 ## Doc snippets are compile-guarded here
 
-Snippets shipped in the consumer guides are pinned by tests so they cannot silently drift from the API: the canonical ViewModel `load()`/`performLoad` shape in `PalPresentationTests`, the `RouterView` usage in `PalNavigationTests`, and DesignSystem's scroll-observation and shimmer/skeleton snippets in `PalDesignSystemTests`. **Change a documented pattern and you change its guard test in the same commit** — two shipped snippets once reached adopters non-compiling, which is what these guards exist to prevent.
+Snippets shipped in the consumer guides are pinned by tests so they cannot silently drift from the API: the canonical ViewModel `load()`/`performLoad` shape in `PalPresentationTests`, the `RouterView` usage in `PalNavigationTests`, DesignSystem's scroll-observation and shimmer/skeleton snippets in `PalDesignSystemTests`, and PalPersistence's private-suite testing snippet in `PalPersistenceTests`. **Change a documented pattern and you change its guard test in the same commit** — two shipped snippets once reached adopters non-compiling, which is what these guards exist to prevent.
 
 ## Style
 
