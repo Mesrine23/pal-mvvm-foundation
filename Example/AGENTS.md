@@ -10,7 +10,7 @@ It is also the reference implementation of the canonical per-screen pattern — 
 
 ```bash
 # open Example/PalExample.xcodeproj, or:
-xcodebuild -project Example/PalExample.xcodeproj -scheme PalExample build
+xcodebuild -project Example/PalExample.xcodeproj -scheme PalExample -destination 'generic/platform=iOS Simulator' build
 ```
 
 The app must compile before any change is done. It builds for the iOS Simulator with 0 warnings — keep it that way.

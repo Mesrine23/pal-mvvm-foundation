@@ -1,7 +1,7 @@
 ---
 name: verify
 description: Run Pal's definition of done and report which conditions pass or fail. Use before claiming any change is finished, and when asked to verify, check the build, or confirm things are green.
-allowed-tools: Bash(Scripts/check-adopter-kit.sh*) Bash(./Scripts/check-adopter-kit.sh*) Bash(swift build) Bash(swift test*) Bash(xcodebuild*) Bash(git status*) Bash(git diff*) Bash(git tag*) Bash(swift package diagnose-api-breaking-changes*)
+allowed-tools: Bash(Scripts/check-adopter-kit.sh*) Bash(./Scripts/check-adopter-kit.sh*) Bash(swift build) Bash(swift test*) Bash(xcodebuild*) Bash(git status*) Bash(git diff*) Bash(git tag*) Bash(swift package diagnose-api-breaking-changes*) Bash(swift package --triple arm64-apple-ios17.0-simulator *) Bash(xcrun --sdk iphonesimulator --show-sdk-path)
 ---
 
 Walk all eight conditions. Report each as PASS or FAIL **with the actual output** for anything that fails. Never summarize a failure as a warning, and never report the change as done while one is FAIL.
@@ -15,10 +15,10 @@ swift build && swift test
 ## 3. Example app compiles
 
 ```bash
-xcodebuild -project Example/PalExample.xcodeproj -scheme PalExample build
+xcodebuild -project Example/PalExample.xcodeproj -scheme PalExample -destination 'generic/platform=iOS Simulator' build
 ```
 
-Skip only if the change touches no Swift and no `Package.swift`; say so explicitly in the report.
+Skip only if the change touches no Swift and no `Package.swift`; say so explicitly in the report. Keep the `-destination`: without it `xcodebuild` picks the Mac and fails at signing (exit 65).
 
 No scheme is committed under `xcshareddata` — `-scheme` works because Xcode autocreates a per-user scheme in gitignored `xcuserdata/`. On a fresh clone that has never been opened in Xcode, open the project once, then retry. Do not substitute `-target`: it builds Release into an untracked `build/` and fails.
 
@@ -33,13 +33,15 @@ git diff -- Sources | grep -E '^\+\s*public ' | sed 's/^+//'                # ne
 
 ## 5. Public API is still additive
 
-Only when step 4 found new or changed public surface:
+Only when step 4 found new or changed public surface. Run both — the host build can't see API inside `#if canImport(UIKit)`:
 
 ```bash
-swift package diagnose-api-breaking-changes "$(git tag --list 'v*' --sort=-v:refname | head -1)"
+BASELINE=$(git tag --list 'v*' --sort=-v:refname | head -1)
+swift package diagnose-api-breaking-changes "$BASELINE"
+swift package --triple arm64-apple-ios17.0-simulator --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" diagnose-api-breaking-changes "$BASELINE"
 ```
 
-A detected break is a FAIL unless it is a deliberate, owner-ruled break — say which, and name the ruling.
+Each run must list all twelve products; a run that lists fewer evaluated less than it claims, which is a FAIL. A detected break is a FAIL unless it is a deliberate, owner-ruled break — say which, and name the ruling.
 
 ## 6. Docs moved with the change
 

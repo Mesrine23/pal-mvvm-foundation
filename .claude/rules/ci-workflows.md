@@ -14,7 +14,9 @@ paths:
 
 ## `api-stability` semantics are deliberate
 
-The job diffs the public API against the newest `v*` tag and **hard-fails only on a detected break**. When the baseline tag no longer builds on the CI toolchain, it warns and skips rather than failing — every tag ≤ `v1.3.0` carries a portability bug that makes an API diff against them uncompilable. Do not "simplify" that branch into a plain failure.
+The job diffs the public API against the newest `v*` tag **twice**: for the macOS host, and against the iOS simulator SDK. The host build compiles out `#if canImport(UIKit)` code, so only the iOS run sees UIKit-only API — keep both runs.
+
+Each run **hard-fails only on a detected break**, recognized by the tool's `API breakage` marker. Never match a looser pattern such as `breaking change`: the tool prints "No breaking changes detected in …" for every clean product, so a run that fails for another reason would be reported as a break. When the baseline tag no longer builds on the CI toolchain, the run warns and skips rather than failing — every tag ≤ `v1.3.0` carries a portability bug that makes an API diff against them uncompilable. Do not "simplify" that branch into a plain failure.
 
 A deliberate break is the one expected red: ship it with the new tag and the gate re-baselines on the next run.
 

@@ -6,7 +6,9 @@ Extends [../AGENTS.md](../AGENTS.md). Everything here is published API: twelve p
 
 *Open to extension, closed to modification.*
 
-- **Evolve additively.** New types, new parameters **with defaults**, new protocol requirements **only with default implementations** — a bare new requirement breaks every conformer in every app.
+- **Evolve additively.** New types, new methods, new overloads beside the existing ones, and new protocol requirements **only with default implementations** — a bare new requirement breaks every conformer in every app.
+- **A new parameter on an existing init or method is a break, even with a default.** Calls still compile, but the old signature is gone and the gate reports it removed — add an overload beside it instead (the `ThemeColors.init` precedent, DECISIONS §14).
+- **An overload that differs only in its return type passes the gate but breaks callers:** existing calls become ambiguous. Give the new method its own name.
 - **Deprecate, don't delete.** Keep the old symbol and forward it; remove only at a major, a release after the deprecation:
   ```swift
   @available(*, deprecated, renamed: "send(_:)")
@@ -15,13 +17,15 @@ Extends [../AGENTS.md](../AGENTS.md). Everything here is published API: twelve p
 - **Mind enums.** Adding a `case` to a public enum is source-breaking (consumer `switch`es are exhaustive) — reserve case additions for a major.
 - **SemVer mapping:** additive → minor · fix → patch · breaking → major (with deprecations first).
 
-Verify before you claim additivity:
+Verify before you claim additivity — both runs, against the latest release tag:
 
 ```bash
-swift package diagnose-api-breaking-changes "$(git tag --list 'v*' --sort=-v:refname | head -1)"
+BASELINE=$(git tag --list 'v*' --sort=-v:refname | head -1)
+swift package diagnose-api-breaking-changes "$BASELINE"
+swift package --triple arm64-apple-ios17.0-simulator --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" diagnose-api-breaking-changes "$BASELINE"
 ```
 
-CI runs this as the `api-stability` job against the latest release tag; a deliberate break is the one expected red. Its failure semantics are in [.claude/rules/ci-workflows.md](../.claude/rules/ci-workflows.md).
+The host build compiles out `#if canImport(UIKit)` code, so only the second run sees UIKit-only API (in PalDebugKit, PalDesignSystem, PalNotifications and PalWeb). Trust a run only when it lists all twelve products. CI runs both as the `api-stability` job; a deliberate break is the one expected red. Its failure semantics are in [.claude/rules/ci-workflows.md](../.claude/rules/ci-workflows.md).
 
 ## DocC catalogs
 

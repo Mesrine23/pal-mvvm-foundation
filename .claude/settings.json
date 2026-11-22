@@ -8,6 +8,8 @@
       "Bash(swift test *)",
       "Bash(swift package describe *)",
       "Bash(swift package diagnose-api-breaking-changes *)",
+      "Bash(swift package --triple arm64-apple-ios17.0-simulator *)",
+      "Bash(xcrun --sdk iphonesimulator --show-sdk-path)",
       "Bash(xcodebuild -project Example/PalExample.xcodeproj *)",
       "Bash(git status *)",
       "Bash(git diff *)",
