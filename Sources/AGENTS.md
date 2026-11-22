@@ -39,4 +39,4 @@ Each product owns `Sources/<Target>/<Target>.docc`. **Adding a public symbol mea
 
 ## Localization
 
-Products with user-facing text (PalDesignSystem, PalPresentation, PalDebugKit) ship String Catalogs via `Bundle.module` in **en + el**, and accept optional custom strings so apps override without forking. PalDebugKit's menu is the one deliberate exception — it is developer-facing and stays unlocalized.
+PalDesignSystem and PalPresentation ship String Catalogs via `Bundle.module` in **en + el** and read their named keys without symbols (`String(localized: "common.ok", bundle: .module)`), since the Xcode 16 floor generates none. They accept optional custom strings so apps override without forking. PalDebugKit's UI is developer-facing and English-only, with no catalog.

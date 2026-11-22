@@ -91,7 +91,7 @@ Every target declares ALL modules it directly imports (no transitive reliance). 
 
 ## Clean-code rules (binding)
 
-1. **No user-facing string literals in Views/ViewModels** — String Catalog keys via `String(localized:)`/generated symbols only.
+1. **No user-facing text or key literals in Views/ViewModels** — app copy lives in the String Catalog under named keys and reaches code through Xcode's generated symbols (`Text(.settingsTitle)`, `String(localized: .settingsTitle)`). Pal's own products read their named keys from `Bundle.module`, and DebugKit's UI is English-only ([DECISIONS §17](Documentation/DECISIONS.md)).
 2. **No implementation comments** — self-documenting naming; sole exception: a genuinely non-obvious constraint/workaround, explaining WHY never WHAT. No commented-out code. `// MARK:` dividers permitted. **`///` documentation comments are REQUIRED on every public symbol.**
 3. Follow the naming conventions above exactly.
 4. **No force-unwraps / `try!` / `as!`** — sole exception: DI resolution at the app's composition root (fail-fast by design).
