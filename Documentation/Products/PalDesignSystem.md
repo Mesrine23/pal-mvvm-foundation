@@ -84,7 +84,7 @@ The modern first-load affordance: render your **real layout with placeholder val
 ```swift
 switch viewModel.users.state {
 case .idle, .loading(previous: nil):  list(User.placeholders).skeleton(when: true)
-case .loading(previous: let cached?): list(cached)          // refresh keeps real content
+case .loading(previous: let cached?): list(cached)          // a load/performLoad reload keeps real content
 case .loaded(let users):              list(users)
 // …
 }

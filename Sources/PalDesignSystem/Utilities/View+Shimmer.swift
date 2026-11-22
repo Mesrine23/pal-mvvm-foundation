@@ -58,7 +58,7 @@ public extension View {
     ///
     /// ```swift
     /// case .idle, .loading(previous: nil): list(User.placeholders).skeleton(when: true)
-    /// case .loading(previous: let cached?): list(cached)   // refresh keeps real content
+    /// case .loading(previous: let cached?): list(cached)   // a load/performLoad reload keeps real content
     /// ```
     func skeleton(when active: Bool) -> some View {
         redacted(reason: active ? .placeholder : [])

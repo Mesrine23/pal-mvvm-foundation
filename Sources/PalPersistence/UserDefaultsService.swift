@@ -1,5 +1,6 @@
 import Foundation
 import PalCore
+import os
 
 /// The production ``DefaultsStorage``: property-list-native values are stored
 /// directly (keeping `@AppStorage` and plist interop), complex `Codable` values

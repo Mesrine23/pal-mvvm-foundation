@@ -1,8 +1,9 @@
 import Foundation
 import PalPresentation
 
-/// A popup over an intact screen — the channel for ACTION failures and
-/// confirmations (load failures belong to `ViewState`). Apps declare their
+/// A popup over an intact screen — the channel for ACTION failures and for
+/// questions before an action (load failures belong to `ViewState`; a
+/// confirmation after an action is an ``AppToast``). Apps declare their
 /// specific alerts as static factory extensions:
 ///
 /// ```swift
@@ -29,7 +30,7 @@ public struct AppAlert: Identifiable, Sendable {
         /// A positive outcome.
         case success
 
-        /// A caution or confirmation.
+        /// A caution, or a question before a destructive action.
         case warning
 
         /// A failure.

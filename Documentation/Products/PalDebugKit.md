@@ -34,7 +34,7 @@ let client = HTTPClient(baseURL: prodURL, interceptors: [LoggingInterceptor(), R
 #endif
 ```
 
-Order is **inspector → mock → Logging → Retry → Auth → transport**, so mocked calls are logged for free and the inspector captures request start + real timing.
+Order is **inspector → mock → Logging → Retry → Auth → transport**, so mocked calls are logged for free and the inspector times each exchange from its start. It records the exchange when it finishes, so a call still in flight isn't in Logs yet.
 
 ## Presenting + reacting to switches
 
@@ -50,6 +50,16 @@ rootView
     }
     #endif
 ```
+
+The shake is only one trigger: `present()` opens the menu from anything, so give testers a control of your own as well, behind the same flag:
+
+```swift
+#if DEBUGKIT
+Button { PalDebugTools.shared.present() } label: { Image(systemName: "ladybug") }
+#endif
+```
+
+In the simulator, Xcode 27's Device Hub sends a shake from **Controls → Shake**, and a terminal sends one with `xcrun simctl spawn booted notifyutil -p com.apple.UIKit.SimulatorShake`.
 
 The base URL resolves per request through `EnvironmentResolver` (synchronous, off the main actor); selecting a new environment persists it and broadcasts `environmentChanges`. **In-flight cancellation is app-owned** — your reset on the event tears down the work; the client stays immutable.
 

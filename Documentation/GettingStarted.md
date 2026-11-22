@@ -234,7 +234,14 @@ final class DashboardViewModel {
 `async let` runs the calls concurrently; `try await DashboardContent(…)` returns only when **all** finish, and if any throws, structured concurrency cancels the rest and the one loader goes `.failed`.
 
 - **One loader + composite** when you care "all done together" (independent calls → `async let`; data-dependent → sequential `await`, inside the use case — the VM and View don't change).
-- **A loader per section** only when sections load/fail/**refresh independently**. The moment a section reloads on its own, give *that* section its own `Loader` and drop it from the composite (one source of truth); derive "all done on init" as a computed `isInitiallyLoading`, and refresh just that section with `section.refresh { … }` (its `.loading(previous:)` keeps the stale data while it reloads).
+- **A loader per section** only when sections load/fail/**refresh independently**. The moment a section reloads on its own, give *that* section its own `Loader` and drop it from the composite (one source of truth); derive "all done on init" as a computed `isInitiallyLoading`, and refresh just that section with `section.refresh { … }`, which keeps the section's current state until it finishes — no `.loading` transition. Reload with `load`/`performLoad` instead when the section should show `.loading(previous:)`. One pull can refresh several sections at once, and the spinner ends after the slower one:
+  ```swift
+  func refreshAll() async {   // .refreshable { await viewModel.refreshAll() }
+      async let usersDone: Void = users.refresh { try await self.fetchUsers.execute() }
+      async let postsDone: Void = posts.refresh { try await self.fetchPosts.execute() }
+      _ = await (usersDone, postsDone)
+  }
+  ```
 - A spinner for a true **action** (submit/toggle), not a content section, belongs on a separate `Loader<Void>`/flag with errors via `.appAlert` — the ACTION channel, distinct from LOAD.
 
 ### Paginated lists

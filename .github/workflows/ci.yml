@@ -29,12 +29,15 @@ jobs:
         run: swift test
 
   api-stability:
-    runs-on: macos-15
+    # The iOS run needs an API digester that can read its own dump of an iOS build.
+    # Xcode 16.4 and 26.6 can't ("Unable to parse empty data"), so that run warns and
+    # skips until this image's default Xcode can; newer Xcodes reach macos-26 first.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Diff public API against the latest release tag
+      - name: Diff public API against the latest release tag (macOS host and iOS SDK)
         run: |
           BASELINE=$(git tag --list 'v*' --sort=-v:refname | head -1)
           if [ -z "$BASELINE" ]; then
@@ -42,16 +45,28 @@ jobs:
             exit 0
           fi
           echo "Baseline: $BASELINE"
+          IOS_SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
           set +e
-          OUTPUT=$(swift package diagnose-api-breaking-changes "$BASELINE" 2>&1)
-          CODE=$?
-          echo "$OUTPUT"
-          [ $CODE -eq 0 ] && exit 0
-          # Fail only on an actual detected break; a baseline that no longer
-          # builds on this toolchain (e.g. a tag predating a portability fix) warns.
-          if echo "$OUTPUT" | grep -qiE "breakage|breaking change"; then
-            echo "::error::Public API breakage detected against $BASELINE"
-            exit 1
-          fi
-          echo "::warning::Baseline $BASELINE could not be evaluated on this toolchain; skipping the API diff."
+          # The host build compiles out `#if canImport(UIKit)` code, so only the run
+          # against the iOS simulator SDK sees UIKit-only API.
+          for PLATFORM in macOS iOS; do
+            echo "=== $PLATFORM"
+            if [ "$PLATFORM" = iOS ]; then
+              OUTPUT=$(swift package --triple arm64-apple-ios17.0-simulator --sdk "$IOS_SDK" diagnose-api-breaking-changes "$BASELINE" 2>&1)
+            else
+              OUTPUT=$(swift package diagnose-api-breaking-changes "$BASELINE" 2>&1)
+            fi
+            CODE=$?
+            echo "$OUTPUT"
+            [ $CODE -eq 0 ] && continue
+            # Fail only on an actual detected break. The tool prints "No breaking changes
+            # detected in …" for every clean product, so match its "API breakage" marker;
+            # a baseline that no longer builds on this toolchain (e.g. a tag predating a
+            # portability fix) warns instead.
+            if echo "$OUTPUT" | grep -q "API breakage"; then
+              echo "::error::Public API breakage detected against $BASELINE ($PLATFORM)"
+              exit 1
+            fi
+            echo "::warning::Baseline $BASELINE could not be evaluated for $PLATFORM on this toolchain; skipping that API diff."
+          done
           exit 0
