@@ -25,7 +25,7 @@ swift package diagnose-api-breaking-changes "$BASELINE"
 swift package --triple arm64-apple-ios17.0-simulator --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" diagnose-api-breaking-changes "$BASELINE"
 ```
 
-The host build compiles out `#if canImport(UIKit)` code, so only the second run sees UIKit-only API (in PalDebugKit, PalDesignSystem, PalNotifications and PalWeb). Trust a run only when it lists all twelve products. CI runs both as the `api-stability` job; a deliberate break is the one expected red. Its failure semantics are in [.claude/rules/ci-workflows.md](../.claude/rules/ci-workflows.md).
+The host build compiles out `#if canImport(UIKit)` code, so only the second run sees UIKit-only API (in PalDebugKit, PalDesignSystem, PalNotifications and PalWeb). Trust a run only when it lists all twelve products. CI runs both as the `api-stability` job, but its iOS run warns and skips until GitHub's image carries an Xcode that can diff an iOS build (26.6 can't), so run the second command yourself; a deliberate break is the one expected red. Its failure semantics are in [.claude/rules/ci-workflows.md](../.claude/rules/ci-workflows.md).
 
 ## DocC catalogs
 

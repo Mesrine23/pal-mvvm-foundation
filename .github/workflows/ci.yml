@@ -29,8 +29,9 @@ jobs:
         run: swift test
 
   api-stability:
-    # On macos-15, Xcode 16.4's API digester can't read its own dump of the iOS
-    # build ("Unable to parse empty data"), so the iOS run would always be skipped.
+    # The iOS run needs an API digester that can read its own dump of an iOS build.
+    # Xcode 16.4 and 26.6 can't ("Unable to parse empty data"), so that run warns and
+    # skips until this image's default Xcode can; newer Xcodes reach macos-26 first.
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v5
