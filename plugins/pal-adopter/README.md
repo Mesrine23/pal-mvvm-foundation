@@ -20,7 +20,7 @@ It ships two skills and one reference document:
 
 ## Install for everyone on the app
 
-Commit this to your app's `.claude/settings.json`. Teammates get the plugin once they trust the folder — no separate install step:
+Commit this to your app's `.claude/settings.json`:
 
 ```json
 {
@@ -32,6 +32,14 @@ Commit this to your app's `.claude/settings.json`. Teammates get the plugin once
   "enabledPlugins": { "pal-adopter@pal-foundation": true }
 }
 ```
+
+That adds the marketplace and turns the plugin on for the project, but it doesn't download the plugin. Each teammate installs it once in each clone, then runs `/reload-plugins` or starts a new session:
+
+```bash
+claude plugin install pal-adopter@pal-foundation --scope project
+```
+
+A plugin can't set your app's permissions or `claudeMdExcludes`, so add the [settings that keep Pal's rules out of your app](../../Documentation/ADOPTERS.md#keep-pals-rules-out-of-your-app) to the same file.
 
 ## Versioning
 

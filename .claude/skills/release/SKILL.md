@@ -22,9 +22,10 @@ A red `macos-15` edge blocks the release outright — that is the consumer floor
 ```bash
 LAST=$(git tag --list 'v*' --sort=-v:refname | head -1); echo "$LAST"
 swift package diagnose-api-breaking-changes "$LAST"
+swift package --triple arm64-apple-ios17.0-simulator --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" diagnose-api-breaking-changes "$LAST"
 ```
 
-Additive → minor · fix → patch · breaking → major. A break shipped in a minor requires an explicit owner ruling recorded in the deviations log; the `api-stability` gate is expected red until the tag re-baselines it.
+The second run is the only one that sees UIKit-only API; trust each run only when it lists all twelve products. Additive → minor · fix → patch · breaking → major. A break shipped in a minor requires an explicit owner ruling recorded in the deviations log; the `api-stability` gate is expected red until the tag re-baselines it.
 
 ## 3. Write the CHANGELOG entry
 

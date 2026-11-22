@@ -58,7 +58,9 @@ public final class Loader<Value: Sendable> {
     }
 
     /// The awaitable variant for `.task { }` integration: the view's lifecycle
-    /// cancels the work when the view disappears.
+    /// cancels the work when the view disappears. A result that arrives after that
+    /// is dropped, and this call leaves the state at `.loading(previous:)` — read
+    /// `state` after the await to tell whether the content settled.
     public func performLoad(_ operation: @escaping @Sendable () async throws -> Value) async {
         let generation = supersede()
         state = .loading(previous: state.value)
@@ -70,7 +72,8 @@ public final class Loader<Value: Sendable> {
     /// visible and swaps to `.loaded`/`.failed` on completion. Awaitable, so
     /// `.refreshable` waits for it. Driving `.loading` from a `.refreshable` action
     /// instead fights the refresh control ("change the refresh control while it is
-    /// not idle") and can drop the first update.
+    /// not idle") and can drop the first update. If the calling task is cancelled
+    /// first, a late result is dropped and the state stays as it was.
     public func refresh(_ operation: @escaping @Sendable () async throws -> Value) async {
         let generation = supersede()
         await run(operation, generation: generation)

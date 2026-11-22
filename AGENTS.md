@@ -28,7 +28,7 @@ Pal is a reusable, zero-dependency iOS foundation: one Swift Package, multiple l
 ```bash
 swift build        # all package targets
 swift test         # smoke + targeted tests
-# Example app: open Example/PalExample.xcodeproj (or xcodebuild -project ... -scheme PalExample)
+xcodebuild -project Example/PalExample.xcodeproj -scheme PalExample -destination 'generic/platform=iOS Simulator' build   # the Example app
 ```
 
 Every change must leave `swift build` + `swift test` green **and** the Example app compiling. CI runs `swift build` + `swift test` on every push to `main` or `develop` and on every PR; the Example app is verified locally.

@@ -44,10 +44,17 @@ case .failed(let error, previous: let value?): content(value)   // + banner over
 - Cancels the previous in-flight load (re-trigger dedupe — search-as-you-type, rapid refresh).
 - **The newest call wins** across `load`, `performLoad`, and `refresh`: an older call that finishes later — a slow `.task` load overtaken by a retry — never overwrites the newer result. `cancel()` and `reset()` discard in-flight results the same way.
 - Sets `.loading(previous:)`, then `.loaded` or `.failed(PresentableError, previous:)`.
-- **Swallows `CancellationError`** (cancellation never reaches the user).
+- **Swallows `CancellationError`** (cancellation never reaches the user) and leaves the state where the call put it: `.loading(previous:)` after `load`/`performLoad`, the state it found after `refresh`. A screen that stays visible gets out with `reset()`. Throw `CancellationError` only for real cancellation, and have the repository map `NetworkError.cancelled` to it — to `Loader` it's just another error, and unmapped it ends `.failed` with the generic message.
 - Holds `self` weakly; `state` is `private(set)` (only the loader mutates it).
 
 Variants: `performLoad { } async` for `.task { }` (view-lifecycle cancellation); `refresh { } async` for `.refreshable { }` (reloads **in place** — no `.loading` transition, since the refresh control is already the spinner); `cancel()` for teardown (keeps the state — nobody is looking); and `reset()` for a **user-facing Cancel button** (cancels AND returns to `.idle`, so no spinner is stranded on a screen that stays visible). Rule of thumb: **the runner owns re-trigger cancellation; `.task` owns lifecycle cancellation.**
+
+A cancelled `performLoad` or `refresh` — its `.task` ended because the view went away — drops a result that arrives afterwards and leaves the state as it was. `performLoad` returns nothing, so read `state` after the await when you need to know whether the content settled:
+
+```swift
+await card.performLoad { try await self.fetchCard.execute(id) }
+if case .loaded = card.state { loadedCardIDs.insert(id) }
+```
 
 ## Mapping your errors
 

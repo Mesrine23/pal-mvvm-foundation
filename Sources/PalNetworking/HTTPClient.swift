@@ -1,7 +1,10 @@
 import Foundation
 
 /// The production ``NetworkClient``: builds `URLRequest`s from typed ``Request``s,
-/// runs them through the interceptor chain, validates the status, and decodes.
+/// runs them through the interceptor chain, and decodes. The status is validated by
+/// the transport at the chain's inner end, so an interceptor that short-circuits
+/// skips that check: to simulate an error status, it throws
+/// `NetworkError.unacceptableStatus`.
 ///
 /// Immutable after `init` and safe to register as a single shared instance in the
 /// app's composition root. Special-cased responses: `Data` and `String` bypass JSON

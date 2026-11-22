@@ -5,8 +5,12 @@ import os
 /// logging is filterable per category in Console.app and Xcode.
 ///
 /// Logging is opt-in: nothing logs unless a call site creates a logger and uses it.
+/// Under member-import visibility, which new Xcode projects turn on, a file that
+/// logs also imports `os`, the module that declares `Logger`'s members.
 ///
 /// ```swift
+/// import os
+///
 /// private let logger = LoggerFactory.make(category: "Networking")
 /// logger.debug("→ GET /users")
 /// ```
