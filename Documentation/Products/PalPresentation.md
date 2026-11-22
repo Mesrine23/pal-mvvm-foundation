@@ -59,16 +59,27 @@ if case .loaded = card.state { loadedCardIDs.insert(id) }
 ## Mapping your errors
 
 ```swift
-enum UserError: Error, PresentableErrorConvertible {
-    case notFound, network
-    var presentableError: PresentableError {
+// Domain — a package that links nothing:
+public enum UserError: Error { case notFound, network }
+
+// Presentation — the app target, which imports PalPresentation:
+extension UserError: @retroactive PresentableErrorConvertible {
+    public var presentableError: PresentableError {
         switch self {
-        case .notFound: PresentableError(title: "Not found", message: "…", isRetryable: false)
+        case .notFound: PresentableError(title: String(localized: .userNotFoundTitle), message: String(localized: .userNotFoundMessage), isRetryable: false)
         case .network:  .generic
         }
     }
 }
 ```
+
+That's the placement when your Domain links nothing. Three details the compiler only partly enforces:
+
+- Write `@retroactive` only when the error type is declared in another package; within one package the compiler rejects it.
+- The witness is `public`, even in an app target, because the protocol is.
+- Don't mark the conformance `@MainActor`. `PresentableError(from:)` also runs off the main actor, and there an isolated conformance is silently missed: the error maps to `.generic`.
+
+When the error's own module imports PalPresentation, conform in place instead: `enum UserError: Error, PresentableErrorConvertible { … }`.
 
 `Loader` maps anything thrown into a `PresentableError` (using your conformance when present, else `.generic`). For **ACTION paths outside a loader** (save/delete handlers), the same mapping is public — `PresentableError(from: error)` — so never hand-roll the conformance-or-generic dance:
 

@@ -9,8 +9,8 @@ extension LocalNotification {
     static var demoSpotlight: LocalNotification {
         LocalNotification(
             id: "demo-spotlight",
-            title: String(localized: "User spotlight"),
-            body: String(localized: "Leanne Graham posted — tap to open her profile."),
+            title: String(localized: .notificationSpotlightTitle),
+            body: String(localized: .notificationSpotlightBody),
             userInfo: ["userID": "1"]
         )
     }
@@ -19,8 +19,8 @@ extension LocalNotification {
     static var demoReminder: LocalNotification {
         LocalNotification(
             id: "demo-reminder",
-            title: String(localized: "Reminder"),
-            body: String(localized: "Scheduled 5 seconds ago — tap to open user 2."),
+            title: String(localized: .notificationReminderTitle),
+            body: String(localized: .notificationReminderBody),
             userInfo: ["userID": "2"]
         )
     }

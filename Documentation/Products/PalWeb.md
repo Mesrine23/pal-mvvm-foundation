@@ -39,7 +39,7 @@ struct AboutView: View {
                 ProgressView(value: page.progress).progressViewStyle(.linear)
             }
         }
-        .navigationTitle(page.title ?? String(localized: "About"))
+        .navigationTitle(page.title ?? String(localized: .aboutTitle))
     }
 }
 ```

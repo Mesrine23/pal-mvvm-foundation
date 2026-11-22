@@ -22,7 +22,7 @@ struct AboutPalView: View {
             if let error = page.state.error {
                 ErrorView(error) { page.reload() }
             } else if page.state.isLoading, page.state.value == nil {
-                LoadingView(message: String(localized: "Loading page…"))
+                LoadingView(message: String(localized: .aboutPalLoading))
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -31,7 +31,7 @@ struct AboutPalView: View {
                     .progressViewStyle(.linear)
             }
         }
-        .navigationTitle(page.title ?? String(localized: "About Pal"))
+        .navigationTitle(page.title ?? String(localized: .aboutPalTitle))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

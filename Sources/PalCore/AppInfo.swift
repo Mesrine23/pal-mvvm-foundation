@@ -3,7 +3,7 @@ import Foundation
 /// Static information about the host app, read from its main bundle.
 ///
 /// ```swift
-/// Text("v\(AppInfo.current.version) (\(AppInfo.current.build))")
+/// Text(verbatim: "\(AppInfo.current.version) (\(AppInfo.current.build))")
 /// ```
 public struct AppInfo: Sendable, Equatable {
 

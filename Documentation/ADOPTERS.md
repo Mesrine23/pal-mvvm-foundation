@@ -65,6 +65,10 @@ Pal's own public API uses standard Swift naming (`NetworkClient`, `TokenStore`, 
 
 Xcode file templates for all three are in [`Templates/Xcode/`](https://github.com/Mesrine23/pal-mvvm-foundation/tree/main/Templates/Xcode).
 
+## Your app's text
+
+Every string a user reads lives in your String Catalog under a named key — lowerCamelCase, the key being its symbol's name (`settingsSignOut`) — and reaches code through the symbol Xcode generates: `Text(.settingsSignOut)`, or `String(localized: .settingsSignOut)` where a `String` is wanted. No text or key literal goes in a View or ViewModel, so the app is ready for a second language from its first screen. Add a catalog check test: the compiler misses a translation that shows the raw key or a `%lld` turned into `%@`, which crashes. The conventions and the test are in [Your screen's text](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#your-screens-text).
+
 ## Gotchas that cost the most time
 
 - **Own the ViewModel with `@State`.** `@State private var viewModel`, set once in `init`. `.sheet`, `navigationDestination`, and `RouterView` destination closures re-run on unrelated re-renders — a keyboard appearing is enough — and build a fresh ViewModel; a plain `let` hands it to the screen mid-edit and drops the screen's state.
@@ -73,7 +77,7 @@ Xcode file templates for all three are in [`Templates/Xcode/`](https://github.co
 - **Never edit Pal in DerivedData.** A pinned dependency is checked out read-only; edits there are untracked and vanish on the next resolve. To change the foundation, edit its repo — the local-override loop is in [GettingStarted](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#updating-the-foundation-while-building-your-app).
 - **Pin a tag, never a branch.** SemVer is CI-enforced since `1.0.0`, so `from:` is safe and minors never break you. A branch pin chases a moving commit with no contract.
 - **`URLSession` retries dropped connections beneath Pal**, so one logical `send()` can hit your server more than once and `RetryInterceptor` multiplies that. Size rate limits and idempotency budgets accordingly.
-- **Localization:** Pal products with user-facing text ship en + el via `Bundle.module` and accept custom strings, so you override without forking.
+- **Localization:** Pal products with user-facing text ship en + el via `Bundle.module` and accept custom strings, so you override without forking. Pal's strings follow your app's language when it is English or Greek; in any other language they fall back to English or Greek, whichever comes first in the user's list, so such an app supplies its own text and maps every error it throws.
 
 ## Keep Pal's rules out of your app
 

@@ -18,37 +18,37 @@ struct SettingsView: View {
         @Bindable var appState = appState
 
         Form {
-            Section("Appearance") {
-                Toggle("Branded theme", isOn: $appState.useBrandedTheme)
+            Section(.settingsSectionAppearance) {
+                Toggle(.settingsBrandedTheme, isOn: $appState.useBrandedTheme)
             }
-            Section("Feature flags") {
-                Toggle("Show user email", isOn: $viewModel.showsUserEmail)
+            Section(.settingsSectionFeatureFlags) {
+                Toggle(.settingsShowUserEmail, isOn: $viewModel.showsUserEmail)
             }
-            Section("Session") {
+            Section(.settingsSectionSession) {
                 if viewModel.isLoggedIn {
-                    Button("Sign out", role: .destructive) {
+                    Button(.settingsSignOut, role: .destructive) {
                         Task { await viewModel.logOut() }
                     }
                 } else {
-                    Button("Simulate sign in") {
+                    Button(.settingsSimulateSignIn) {
                         Task { await viewModel.logIn() }
                     }
                 }
             }
-            Section("Notifications") {
-                LabeledContent("Permission", value: viewModel.notificationStatusText)
+            Section(.settingsSectionNotifications) {
+                LabeledContent(.settingsPermission, value: viewModel.notificationStatusText)
                 if viewModel.notificationStatus == .notDetermined {
-                    Button("Request permission") {
+                    Button(.settingsRequestPermission) {
                         Task { await viewModel.requestNotificationPermission() }
                     }
                 }
-                Button("Notify now (tap the banner!)") {
+                Button(.settingsNotifyNow) {
                     Task { await viewModel.notifyNow() }
                 }
-                Button("Remind me in 5 seconds") {
+                Button(.settingsRemindLater) {
                     Task { await viewModel.remindInFiveSeconds() }
                 }
-                Button("Register for push") {
+                Button(.settingsRegisterForPush) {
                     viewModel.registerForPush()
                 }
                 if let registration = viewModel.pushRegistrationText {
@@ -58,13 +58,13 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            Section("About") {
-                LabeledContent("Version", value: viewModel.appVersion)
-                NavigationLink("About Pal") { AboutPalView() }
-                Button("Pal on GitHub") { viewModel.openRepository() }
+            Section(.settingsSectionAbout) {
+                LabeledContent(.settingsVersion, value: viewModel.appVersion)
+                NavigationLink(.aboutPalTitle) { AboutPalView() }
+                Button(.settingsGitHub) { viewModel.openRepository() }
             }
         }
-        .navigationTitle("Settings")
+        .navigationTitle(.settingsTitle)
         .appAlert($viewModel.alert)
         .appToast($viewModel.toast)
         .task { await viewModel.onAppear() }

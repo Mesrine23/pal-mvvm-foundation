@@ -20,18 +20,18 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Users", systemImage: "person.2", value: .users) {
+            Tab(.usersTitle, systemImage: "person.2", value: .users) {
                 RouterView(router: coordinator.router, root: .usersList) { route in
                     coordinator.view(for: route)
                 }
                 .id(environmentToken)
             }
-            Tab("Posts", systemImage: "doc.plaintext", value: .posts) {
+            Tab(.postsTitle, systemImage: "doc.plaintext", value: .posts) {
                 NavigationStack {
                     PostsView(viewModel: container.makePostsViewModel())
                 }
             }
-            Tab("Settings", systemImage: "gearshape", value: .settings) {
+            Tab(.settingsTitle, systemImage: "gearshape", value: .settings) {
                 NavigationStack {
                     SettingsView(
                         viewModel: container.makeSettingsViewModel(),

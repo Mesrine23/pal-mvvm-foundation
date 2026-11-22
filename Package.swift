@@ -87,6 +87,10 @@ let package = Package(
             dependencies: ["PalDebugKit"]
         ),
         .testTarget(
+            name: "LocalizationTests",
+            exclude: ["Fixtures"]
+        ),
+        .testTarget(
             name: "PalSmokeTests",
             dependencies: [
                 "PalCore", "PalPersistence", "PalNetworking", "PalAuth", "PalPresentation",

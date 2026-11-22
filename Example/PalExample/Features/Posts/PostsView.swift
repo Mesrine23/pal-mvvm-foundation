@@ -15,7 +15,7 @@ struct PostsView: View {
 
     var body: some View {
         content
-            .navigationTitle("Posts")
+            .navigationTitle(.postsTitle)
             .task { await viewModel.load() }
     }
 

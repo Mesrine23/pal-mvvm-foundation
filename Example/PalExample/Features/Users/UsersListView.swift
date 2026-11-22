@@ -13,7 +13,7 @@ struct UsersListView: View {
 
     var body: some View {
         content
-            .navigationTitle("Users")
+            .navigationTitle(.usersTitle)
             .task { await viewModel.load() }
     }
 
@@ -52,9 +52,9 @@ struct UsersListView: View {
             if users.isEmpty {
                 EmptyStateView(
                     systemImage: "person.slash",
-                    title: String(localized: "No users"),
-                    message: String(localized: "There is nothing to show yet."),
-                    actionTitle: String(localized: "Reload"),
+                    title: String(localized: .usersEmptyTitle),
+                    message: String(localized: .usersEmptyMessage),
+                    actionTitle: String(localized: .usersEmptyReload),
                     action: { viewModel.reload() }
                 )
             }

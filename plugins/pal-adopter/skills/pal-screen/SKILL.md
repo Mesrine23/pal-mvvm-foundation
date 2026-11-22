@@ -56,7 +56,7 @@ The delegate is `weak` and `AnyObject`. No `isLoading`, no error flag — the `L
 
 ## 4. View
 
-Own the ViewModel with `@State`, switch on the state, one `.task` to load. User-facing text comes from the String Catalog, never a literal.
+Own the ViewModel with `@State`, switch on the state, one `.task` to load. User-facing text comes from the String Catalog through its generated symbols (`Text(.itemsEmptyTitle)`), never a text or key literal.
 
 ```swift
 @State private var viewModel: ItemsViewModel
@@ -97,4 +97,4 @@ func makeItemsViewModel(delegate: ItemsNavigationDelegate?) -> ItemsViewModel {
 
 ## Before you call it done
 
-Every user-facing string is a catalog key · the View holds its ViewModel in `@State` · the delegate is weak · the View owns no business logic and touches no client or repository · an action's failure goes to `.appAlert` and its confirmation to `.appToast`, not to the screen's `ViewState`.
+Every user-facing string is a catalog symbol · the View holds its ViewModel in `@State` · the delegate is weak · the View owns no business logic and touches no client or repository · an action's failure goes to `.appAlert` and its confirmation to `.appToast`, not to the screen's `ViewState`.

@@ -10,7 +10,7 @@ import Foundation
 ///     static func orderReady(_ order: Order) -> LocalNotification {
 ///         LocalNotification(
 ///             id: "order-ready-\(order.id)",
-///             title: String(localized: "Your order is ready"),
+///             title: String(localized: .orderReadyTitle),
 ///             body: order.summary,
 ///             userInfo: ["orderID": order.id]
 ///         )

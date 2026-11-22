@@ -8,7 +8,7 @@ import Foundation
 /// ```swift
 /// extension AppToast {
 ///     static var saved: AppToast {
-///         AppToast(kind: .success, title: String(localized: "Saved"))
+///         AppToast(kind: .success, title: String(localized: .editorSaved))
 ///     }
 /// }
 /// ```

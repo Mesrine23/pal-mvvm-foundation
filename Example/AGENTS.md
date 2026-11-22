@@ -19,6 +19,10 @@ The app must compile before any change is done. It builds for the iOS Simulator 
 
 `Domain/` entities + use cases · `Data/` DTOs, mapping, repositories · `Features/{Users,Posts,Settings}/` screens · `Navigation/` coordinators + routes · `Composition/` the composition root · `Analytics/`, `FeatureFlags/` app-side conformances.
 
+## Text
+
+Every user-facing string lives in `PalExample/Localizable.xcstrings` under a flat lowerCamelCase key, and code reaches it through the generated symbol (`Text(.usersTitle)`, `String(localized: .settingsSignedInTitle)`). Add new text as a catalog key, never as a literal; `swift test` runs `LocalizationTests`, which fails on a broken catalog.
+
 ## Main-actor default isolation
 
 The app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. Domain and Data value types are therefore marked `nonisolated` so DTOs decode and entities construct off the main actor. New entities, DTOs, and use-case types follow suit — this is the adoption guidance in [ARCHITECTURE.md](../Documentation/ARCHITECTURE.md), not an Example-only quirk.

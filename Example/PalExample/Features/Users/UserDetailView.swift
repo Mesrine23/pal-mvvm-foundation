@@ -14,16 +14,16 @@ struct UserDetailView: View {
         List {
             Section {
                 if viewModel.showsEmail {
-                    LabeledContent("Email", value: viewModel.user.email)
+                    LabeledContent(.userDetailEmail, value: viewModel.user.email)
                 }
-                LabeledContent("Company", value: viewModel.user.company)
+                LabeledContent(.userDetailCompany, value: viewModel.user.company)
             }
             Section {
                 Button {
                     viewModel.toggleFavorite()
                 } label: {
                     Label(
-                        viewModel.isFavorite ? "Remove from favorites" : "Add to favorites",
+                        viewModel.isFavorite ? .userDetailRemoveFavorite : .userDetailAddFavorite,
                         systemImage: viewModel.isFavorite ? "star.fill" : "star"
                     )
                 }

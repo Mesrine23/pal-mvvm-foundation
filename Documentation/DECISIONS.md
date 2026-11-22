@@ -63,7 +63,7 @@ Rules:
 
 ## 5. Clean-code rules (binding for ALL agents and humans)
 
-1. **No user-facing string literals in Views/ViewModels** — String Catalog keys via `String(localized:)`/generated symbols only.
+1. **No user-facing text or key literals in Views/ViewModels** — app copy lives in the String Catalog under named keys and reaches code through Xcode's generated symbols (`Text(.settingsTitle)`, `String(localized: .settingsTitle)`). Pal's own products read their named keys from `Bundle.module`, and DebugKit's UI is English-only (§17).
 2. **No implementation comments** — self-documenting naming; sole exception: a genuinely non-obvious constraint/workaround, explaining WHY never WHAT. No commented-out code. `// MARK:` section dividers permitted. **`///` documentation comments are REQUIRED on every public symbol** (Quick Help/DocC).
 3. Binding naming conventions per §4.
 4. **No force-unwraps / `try!` / `as!`** — sole exception: DI resolution at the app's composition root (fail-fast by design).
@@ -181,8 +181,9 @@ Rules:
 
 ## 17. Localization
 
-- Standard: **String Catalogs** + `String(localized:)` + Xcode generated symbols. No third-party tooling. Apps own their strings.
-- Foundation packages with user-facing text (DesignSystem, Presentation, DebugKit) carry their own catalogs via `Bundle.module`, shipping **en + el**; components accept optional custom strings (override without forking).
+- Standard: **String Catalogs** with **named keys** in lowerCamelCase — the key is its symbol's name (`settingsTitle`, never the text itself) — reached through **Xcode's generated symbols** (`Text(.settingsTitle)`, `String(localized: .settingsTitle)`); before Xcode 26, hand-written `LocalizedStringResource` constants of the same shape. No third-party tooling. Apps own their strings, and every app is ready for a second language from its first screen.
+- **A catalog check test** guards every catalog and fails on what the compiler can't see: a key missing a language (the screen would show the raw key), a translation that changes or drops a placeholder (`%lld` turned into `%@` crashes), `%%` in a key without placeholders, an entry Xcode extracted instead of one added by hand (it has no symbol), and a key written twice.
+- Foundation packages with user-facing text (DesignSystem, Presentation) carry their own catalogs via `Bundle.module`, shipping **en + el**; they read their named keys without symbols (`String(localized: "common.ok", bundle: .module)`) because the Xcode 16 floor generates none. Components accept optional custom strings (override without forking). DebugKit's UI is developer-facing and English-only, with no catalog (§16).
 - Formatting is locale-correct via `FormatStyle` (Core conveniences).
 - Runtime switching: default = iOS per-app language Settings (automatic with ≥2 localizations). In-app switcher projects use `AppLanguage` (PalCore).
 
