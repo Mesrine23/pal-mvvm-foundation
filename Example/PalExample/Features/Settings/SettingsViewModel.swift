@@ -75,11 +75,11 @@ final class SettingsViewModel {
     /// The permission state as display text.
     var notificationStatusText: String {
         switch notificationStatus {
-        case .notDetermined: String(localized: "Not asked")
-        case .denied: String(localized: "Denied")
-        case .authorized: String(localized: "Authorized")
-        case .provisional: String(localized: "Provisional")
-        case .ephemeral: String(localized: "Ephemeral")
+        case .notDetermined: String(localized: .settingsPermissionNotDetermined)
+        case .denied: String(localized: .settingsPermissionDenied)
+        case .authorized: String(localized: .settingsPermissionAuthorized)
+        case .provisional: String(localized: .settingsPermissionProvisional)
+        case .ephemeral: String(localized: .settingsPermissionEphemeral)
         }
     }
 
@@ -99,7 +99,7 @@ final class SettingsViewModel {
         do {
             try await notifications.schedule(.demoSpotlight)
             analytics.track(.notificationScheduled("demo-spotlight"))
-            toast = AppToast(kind: .success, title: String(localized: "Notification sent"))
+            toast = AppToast(kind: .success, title: String(localized: .settingsNotificationSent))
         } catch {
             alert = .error(PresentableError(from: error))
         }
@@ -112,8 +112,8 @@ final class SettingsViewModel {
             analytics.track(.notificationScheduled("demo-reminder"))
             toast = AppToast(
                 kind: .success,
-                title: String(localized: "Reminder scheduled"),
-                message: String(localized: "Background the app to see it arrive.")
+                title: String(localized: .settingsReminderScheduledTitle),
+                message: String(localized: .settingsReminderScheduledMessage)
             )
         } catch {
             alert = .error(PresentableError(from: error))
@@ -150,9 +150,9 @@ final class SettingsViewModel {
         analytics.track(.loggedIn)
         alert = AppAlert(
             kind: .success,
-            title: String(localized: "Signed in"),
-            message: String(localized: "A demo token was saved to the Keychain."),
-            primary: AlertAction(String(localized: "OK"))
+            title: String(localized: .settingsSignedInTitle),
+            message: String(localized: .settingsSignedInMessage),
+            primary: AlertAction(String(localized: .settingsSignedInOK))
         )
     }
 

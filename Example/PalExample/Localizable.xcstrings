@@ -1,0 +1,522 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "aboutPalLoading" : {
+      "comment" : "Shown while the About Pal web page loads.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading page…"
+          }
+        }
+      }
+    },
+    "aboutPalTitle" : {
+      "comment" : "Settings row and title of the About Pal web page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About Pal"
+          }
+        }
+      }
+    },
+    "notificationReminderBody" : {
+      "comment" : "Body of the scheduled demo notification that opens user 2.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheduled 5 seconds ago — tap to open user 2."
+          }
+        }
+      }
+    },
+    "notificationReminderTitle" : {
+      "comment" : "Title of the scheduled demo notification.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder"
+          }
+        }
+      }
+    },
+    "notificationSpotlightBody" : {
+      "comment" : "Body of the demo notification that opens user 1.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leanne Graham posted — tap to open her profile."
+          }
+        }
+      }
+    },
+    "notificationSpotlightTitle" : {
+      "comment" : "Title of the demo notification that opens user 1.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User spotlight"
+          }
+        }
+      }
+    },
+    "postsTitle" : {
+      "comment" : "Tab label and navigation title of the posts list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posts"
+          }
+        }
+      }
+    },
+    "settingsBrandedTheme" : {
+      "comment" : "Toggle that switches the app to the branded theme.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Branded theme"
+          }
+        }
+      }
+    },
+    "settingsGitHub" : {
+      "comment" : "Button that opens Pal's repository on GitHub.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pal on GitHub"
+          }
+        }
+      }
+    },
+    "settingsNotificationSent" : {
+      "comment" : "Toast shown after the notification was posted.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notification sent"
+          }
+        }
+      }
+    },
+    "settingsNotifyNow" : {
+      "comment" : "Button that posts a local notification right away.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notify now (tap the banner!)"
+          }
+        }
+      }
+    },
+    "settingsPermission" : {
+      "comment" : "Label of the notification permission row.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permission"
+          }
+        }
+      }
+    },
+    "settingsPermissionAuthorized" : {
+      "comment" : "Notification permission state: authorized.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authorized"
+          }
+        }
+      }
+    },
+    "settingsPermissionDenied" : {
+      "comment" : "Notification permission state: denied.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denied"
+          }
+        }
+      }
+    },
+    "settingsPermissionEphemeral" : {
+      "comment" : "Notification permission state: ephemeral, as for App Clips.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ephemeral"
+          }
+        }
+      }
+    },
+    "settingsPermissionNotDetermined" : {
+      "comment" : "Notification permission state: the app hasn't asked yet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not asked"
+          }
+        }
+      }
+    },
+    "settingsPermissionProvisional" : {
+      "comment" : "Notification permission state: provisional, delivered quietly.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provisional"
+          }
+        }
+      }
+    },
+    "settingsRegisterForPush" : {
+      "comment" : "Button that registers for remote notifications.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Register for push"
+          }
+        }
+      }
+    },
+    "settingsRemindLater" : {
+      "comment" : "Button that schedules a local notification in 5 seconds.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me in 5 seconds"
+          }
+        }
+      }
+    },
+    "settingsReminderScheduledMessage" : {
+      "comment" : "Message of the toast shown after the reminder was scheduled.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background the app to see it arrive."
+          }
+        }
+      }
+    },
+    "settingsReminderScheduledTitle" : {
+      "comment" : "Title of the toast shown after the reminder was scheduled.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder scheduled"
+          }
+        }
+      }
+    },
+    "settingsRequestPermission" : {
+      "comment" : "Button that asks for notification permission.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request permission"
+          }
+        }
+      }
+    },
+    "settingsSectionAbout" : {
+      "comment" : "Settings section header for the app information.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "settingsSectionAppearance" : {
+      "comment" : "Settings section header for the appearance options.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        }
+      }
+    },
+    "settingsSectionFeatureFlags" : {
+      "comment" : "Settings section header for the feature flags.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feature flags"
+          }
+        }
+      }
+    },
+    "settingsSectionNotifications" : {
+      "comment" : "Settings section header for notifications.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "settingsSectionSession" : {
+      "comment" : "Settings section header for the demo session.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session"
+          }
+        }
+      }
+    },
+    "settingsShowUserEmail" : {
+      "comment" : "Toggle for the feature flag that shows users' emails.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show user email"
+          }
+        }
+      }
+    },
+    "settingsSignOut" : {
+      "comment" : "Button that clears the demo session.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out"
+          }
+        }
+      }
+    },
+    "settingsSignedInMessage" : {
+      "comment" : "Message of the alert shown after the demo sign-in.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A demo token was saved to the Keychain."
+          }
+        }
+      }
+    },
+    "settingsSignedInOK" : {
+      "comment" : "Button that closes the demo sign-in alert.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "settingsSignedInTitle" : {
+      "comment" : "Title of the alert shown after the demo sign-in.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signed in"
+          }
+        }
+      }
+    },
+    "settingsSimulateSignIn" : {
+      "comment" : "Button that saves a demo token to the Keychain.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulate sign in"
+          }
+        }
+      }
+    },
+    "settingsTitle" : {
+      "comment" : "Tab label and navigation title of the settings screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "settingsVersion" : {
+      "comment" : "Label of the app version row.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
+          }
+        }
+      }
+    },
+    "userDetailAddFavorite" : {
+      "comment" : "Button that adds the user to favorites.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to favorites"
+          }
+        }
+      }
+    },
+    "userDetailCompany" : {
+      "comment" : "Label of the user's company row.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Company"
+          }
+        }
+      }
+    },
+    "userDetailEmail" : {
+      "comment" : "Label of the user's email row.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email"
+          }
+        }
+      }
+    },
+    "userDetailRemoveFavorite" : {
+      "comment" : "Button that removes the user from favorites.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from favorites"
+          }
+        }
+      }
+    },
+    "usersEmptyMessage" : {
+      "comment" : "Message of the empty users list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There is nothing to show yet."
+          }
+        }
+      }
+    },
+    "usersEmptyReload" : {
+      "comment" : "Button that reloads the empty users list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reload"
+          }
+        }
+      }
+    },
+    "usersEmptyTitle" : {
+      "comment" : "Title of the empty users list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No users"
+          }
+        }
+      }
+    },
+    "usersTitle" : {
+      "comment" : "Tab label and navigation title of the users list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Users"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
