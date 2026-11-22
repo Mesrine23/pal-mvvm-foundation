@@ -51,7 +51,7 @@ extension LocalNotification {
     static func orderReady(_ order: Order) -> LocalNotification {
         LocalNotification(
             id: "order-ready-\(order.id)",
-            title: String(localized: "Your order is ready"),
+            title: String(localized: .orderReadyTitle),
             body: order.summary,
             userInfo: ["orderID": order.id]      // rides through to the tap response
         )
@@ -107,7 +107,7 @@ let notifications = NotificationService { delivered in
 // Action buttons (values app-side, registered once at launch):
 notifications.setCategories([
     NotificationCategory(id: "order", actions: [
-        NotificationAction(id: "reorder", title: String(localized: "Reorder"), options: [.foreground]),
+        NotificationAction(id: "reorder", title: String(localized: .orderReorderAction), options: [.foreground]),
     ]),
 ])
 // A tapped button arrives as NotificationResponse.actionID == .custom("reorder").

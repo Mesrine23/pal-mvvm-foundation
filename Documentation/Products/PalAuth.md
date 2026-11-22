@@ -32,7 +32,7 @@ let biometrics = BiometricAuthenticator()
 // Availability drives the affordance (a Face ID button, a settings toggle):
 if biometrics.availableBiometry != .none { showBiometricUnlock() }
 
-switch try await biometrics.authenticate(reason: String(localized: "Unlock your vault")) {
+switch try await biometrics.authenticate(reason: String(localized: .vaultUnlockReason)) {
 case .authenticated:     unlock()
 case .cancelled:         break                       // never an error — do nothing
 case .fallbackRequested: showPasswordSheet()         // your fallback path

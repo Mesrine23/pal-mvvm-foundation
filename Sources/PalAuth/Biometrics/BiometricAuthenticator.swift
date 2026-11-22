@@ -7,7 +7,7 @@ import LocalAuthentication
 /// ```swift
 /// let biometrics = BiometricAuthenticator()
 ///
-/// switch try await biometrics.authenticate(reason: String(localized: "Unlock your vault")) {
+/// switch try await biometrics.authenticate(reason: String(localized: .vaultUnlockReason)) {
 /// case .authenticated:     unlock()
 /// case .cancelled:         break                        // never an error
 /// case .fallbackRequested: showPasswordSheet()

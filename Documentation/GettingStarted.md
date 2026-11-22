@@ -152,6 +152,54 @@ That's the whole loop: **View → ViewModel → UseCase → Repository → Netwo
 
 > The first-load `LoadingView()` can be a **skeleton** instead — render your real rows with placeholder values and `.skeleton(when: true)` (see [PalDesignSystem](Products/PalDesignSystem.md)); the Example's Users and Posts screens do exactly that.
 
+### Your screen's text
+
+Every string a user reads lives in the app's String Catalog (`Localizable.xcstrings`) under a named key, and code reaches it through the symbol Xcode generates for that key. No View or ViewModel holds a text or key literal, so the app is ready for a second language from its first screen.
+
+1. Add a String Catalog to the app target. New Xcode projects turn on `STRING_CATALOG_GENERATE_SYMBOLS`, which generates the symbols.
+2. Add each key by hand (**+** in the catalog editor) with its English value and a comment for the translator; the comment becomes the symbol's documentation.
+3. Use the symbol:
+
+```swift
+Text(.usersEmptyTitle)
+Button(.settingsSignOut, role: .destructive) { viewModel.signOut() }
+    .navigationTitle(.settingsTitle)
+toast = AppToast(kind: .success, title: String(localized: .settingsNotificationSent))   // where a String is wanted
+```
+
+A key with a placeholder becomes a function (`%@` in `greeting` gives `.greeting(name)`), and a plural key takes its count (`.favoritesCount(count)`).
+
+**Conventions:**
+
+- **The key is the symbol's name:** lowerCamelCase, screen first, then the element, then the part when there are several (`settingsSignOut`, `settingsSignedInTitle`, `settingsSignedInMessage`). Xcode refuses two keys that would make the same symbol and names both.
+- **One key per meaning.** A screen's tab and its title share `usersTitle`; the same English word with another meaning gets its own key.
+- **No Swift keyword as a key** (`self`, `default`).
+- **Counts** use `%lld`, with plural variations; `%d` makes the symbol take an `Int32`.
+- **Numbers, money and measurements** go through `FormatStyle` and arrive as `%@`; `%f` makes the symbol take a `Float`.
+- **A key without placeholders writes `%` once** ("Save 20% today"); `%%` would show as `%%`.
+- **Where a view has no `LocalizedStringResource` initializer** on your deployment target (`LabeledContent` and `Tab` before iOS 26), pass `String(localized: .key)`.
+- **Packages** set `defaultLocalization`, or no symbols are generated. Symbols are `internal`, so each module that shows text keeps its own catalog.
+- **Before Xcode 26**, write the constants by hand in the generated shape, and the call sites stay the same:
+  ```swift
+  extension LocalizedStringResource {
+      static var usersEmptyTitle: LocalizedStringResource { LocalizedStringResource("usersEmptyTitle", table: "Localizable") }
+  }
+  ```
+
+**Guard the catalog with a test.** The compiler catches a mistyped symbol, but not a key missing a language (the screen shows the raw key), a translation that changes or drops a placeholder (`%lld` turned into `%@` crashes), `%%` in a key without placeholders, an entry Xcode extracted instead of one you added (it has no symbol), or a key written twice. Copy [`CatalogCheck.swift`](../Tests/LocalizationTests/CatalogCheck.swift) into your test target and point a test at your catalog:
+
+```swift
+@Test func theCatalogHasNoProblems() throws {
+    let catalog = URL(filePath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appending(path: "MyApp/Localizable.xcstrings")
+    #expect(try CatalogCheck.problems(in: catalog) == [])
+}
+```
+
+It can't see a stray literal: `Text("Oops")` compiles and shows the same English in every language.
+
 ### Multiple calls, one state
 
 When a screen fires several calls and you only care once they're **all done**, don't track several loaders — return a **composite** from a composing use case and hold a single `Loader<Composite>`:

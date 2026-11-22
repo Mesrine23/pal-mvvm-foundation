@@ -10,9 +10,9 @@ import PalPresentation
 ///     static func confirmDelete(name: String, onConfirm: @escaping @MainActor @Sendable () -> Void) -> AppAlert {
 ///         AppAlert(
 ///             kind: .warning,
-///             title: String(localized: "delete.title"),
-///             message: String(localized: "delete.message \(name)"),
-///             primary: AlertAction(String(localized: "delete.confirm"), role: .destructive, action: onConfirm),
+///             title: String(localized: .deleteTitle),
+///             message: String(localized: .deleteMessage(name)),
+///             primary: AlertAction(String(localized: .deleteConfirm), role: .destructive, action: onConfirm),
 ///             secondary: .cancel()
 ///         )
 ///     }

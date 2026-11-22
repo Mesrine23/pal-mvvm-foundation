@@ -39,7 +39,7 @@ Slots: `colors` (`background`, `surface`, `surfaceElevated`, `textPrimary`, `tex
 ## Text styles
 
 ```swift
-Text("Welcome").textStyle(.largeTitle)     // built-in tokens: .largeTitle/.title/.headline/.body/.caption
+Text(.homeWelcome).textStyle(.largeTitle)     // built-in tokens: .largeTitle/.title/.headline/.body/.caption
 ```
 
 `TextStyleToken` carries font + optional color + optional `tracking` / `lineSpacing`. Add your own:
@@ -59,12 +59,12 @@ ErrorView(error) { viewModel.refresh() }       // full-screen PresentableError +
 SectionErrorView(error) { viewModel.reload() } // inline per-topic failure
 EmptyStateView(
     systemImage: "person.slash",
-    title: String(localized: "No users"),
-    message: String(localized: "Nothing to show yet."),   // optional
-    actionTitle: String(localized: "Reload"),             // optional
+    title: String(localized: .usersEmptyTitle),
+    message: String(localized: .usersEmptyMessage),       // optional
+    actionTitle: String(localized: .usersEmptyReload),    // optional
     action: { viewModel.reload() }                        // optional
 )
-LoadingView(message: "Loading…")
+LoadingView(message: String(localized: .usersLoading))
 ```
 
 These render the `ViewState` cases (see [PalPresentation](PalPresentation.md)); accessibility labels on actions are built in.
@@ -145,7 +145,7 @@ someView
     .appToast($toast)
 
 // AppToast { kind: .info/.success/.warning/.error, title, message?, duration (default 3 s) }
-toast = AppToast(kind: .success, title: String(localized: "Saved"))
+toast = AppToast(kind: .success, title: String(localized: .editorSaved))
 ```
 
 - Auto-dismisses after `duration`; swipe down (or the accessibility "Dismiss" action) dismisses early; presenting a new value replaces the current one.
