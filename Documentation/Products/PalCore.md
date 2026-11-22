@@ -35,6 +35,7 @@
 
 ```swift
 import PalCore
+import os   // declares Logger's members; needed under member-import visibility, which new Xcode projects turn on
 
 // Logging — opt-in, category per feature
 let log = LoggerFactory.make(category: "Checkout")

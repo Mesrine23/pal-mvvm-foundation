@@ -114,6 +114,27 @@ struct HeaderInterceptor: Interceptor {
 }
 ```
 
+An interceptor that answers without calling `next` short-circuits the chain, so one placed last is a ready-made test seam for repositories: the real `HTTPClient`, your interceptors and the decoding all run, with no network.
+
+```swift
+actor StubTransport: Interceptor {
+    private(set) var sent: [TransportRequest] = []
+    private let answer: NetworkResponse
+
+    init(answer: NetworkResponse) { self.answer = answer }
+
+    func intercept(_ request: TransportRequest, next: Next) async throws(NetworkError) -> NetworkResponse {
+        sent.append(request)
+        return answer
+    }
+}
+
+let stub = StubTransport(answer: NetworkResponse(statusCode: 200, data: Data(#"[{"id":1,"name":"Ada"}]"#.utf8)))
+let client = HTTPClient(baseURL: baseURL, interceptors: [stub])
+```
+
+The status is checked in the transport, at the chain's inner end, so a stub that *returns* a 500 or a 401 counts as a success and starts no token refresh. To simulate an error status, throw it: `throw .unacceptableStatus(code: 500, data: Data(), headers: [:])`.
+
 ## Reachability
 
 Observe the network condition for **UX affordances** — an offline banner, deferring heavy work on expensive paths. Create one `ReachabilityMonitor` at the composition root and inject it:
@@ -137,9 +158,10 @@ for await status in reachability.statusUpdates { … }
 
 - Interceptors are **HTTP-level** (raw bytes); typed decoding happens in `send` after the chain.
 - The chain currency is `TransportRequest { urlRequest, options }` so per-request flags (`requiresAuth`, `timeout`, `maxRetries`, `redirectPolicy`, custom `flags`) reach interceptors.
-- `LoggingInterceptor` redacts auth headers always; logs bodies only at `.debug`; uses `privacy: .private` for dynamics. `NetworkError`'s `description` is redaction-safe by construction (never header values), so logging a caught error can't leak.
+- `LoggingInterceptor` logs each exchange's method, URL (`privacy: .private`), status and duration at `.debug`, and a failure's description at `.error` — never headers or bodies, so passwords and tokens in them never reach the log. `NetworkError`'s `description` is redaction-safe by construction (never header values), so logging a caught error can't leak. To read bodies while debugging, use [PalDebugKit](PalDebugKit.md)'s Logs.
 - `EmptyResponse` accepts empty bodies; `Data`/`String` responses skip JSON decoding (files/PDFs).
 - Query values are emitted form-urlencoded-safe: a literal `+` goes out as `%2B`, so servers that read `+` as a space (virtually all of them) receive the exact value.
+- `path` joins the base URL with or without a slash on either side, and is percent-encoded for you: pass raw text (an encoded `%20` would go out as `%2520`) and put queries in `query:` (a `?` in the path is encoded, not parsed). A `/` always separates segments, so a segment can't contain one — not even as `%2F`.
 - Redirects are **followed transparently by default** (`URLSession` behavior); opt out per request with `redirectPolicy: .deny` to see the 3xx yourself.
 - `.multipart` assembles the whole body **in memory** — fine for form-sized payloads; for large binaries prefer `.file(_:contentType:)`, which streams from disk via an upload task.
 - `URLSession` may transparently retry a dropped connection before PalNetworking sees the failure, so servers can log more physical attempts than `RetryInterceptor`'s cap — the cap governs logical attempts.

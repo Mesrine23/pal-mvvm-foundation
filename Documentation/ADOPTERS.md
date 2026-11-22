@@ -49,7 +49,7 @@ Every screen is the same slice — **View → ViewModel → UseCase → Reposito
 - Navigation leaves the ViewModel through a `‹Screen›NavigationDelegate`, implemented by the feature coordinator over a typed `Router`.
 - Dependencies arrive via `init`, from a factory method on your composition root.
 
-**Three channels, don't mix them:** load failures go to `ViewState`; action failures go to `.appAlert`; action confirmations go to `.appToast`.
+**Three channels, don't mix them:** load failures go to `ViewState`; action failures go to `.appAlert`; action confirmations go to `.appToast`. A confirmation that *asks* before an action ("Delete this?") is an alert; one that *tells* after it ("Saved") is the toast. SwiftUI has no system toast, so an app limited to system components tells inline, or with a `.success` alert, which blocks until dismissed.
 
 **Local data is the exception.** An on-device read — SwiftData's `mainContext`, `UserDefaults`, a bundled file — answers at once: make the repository and use case synchronous (`execute() throws -> T`) and let the ViewModel hold the value, with no `Loader`. `Loader` is for work that can be slow or fail. Keep `@ModelActor` for background work (imports, exports) and create it off the main thread — on iOS 17 one initialized on the main thread runs there. Worked example, including refreshing screens after a write: [Fully-local apps](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#fully-local-apps-no-networking).
 
@@ -69,6 +69,7 @@ Xcode file templates for all three are in [`Templates/Xcode/`](https://github.co
 
 - **Own the ViewModel with `@State`.** `@State private var viewModel`, set once in `init`. `.sheet`, `navigationDestination`, and `RouterView` destination closures re-run on unrelated re-renders — a keyboard appearing is enough — and build a fresh ViewModel; a plain `let` hands it to the screen mid-edit and drops the screen's state.
 - **Main-actor-default isolation.** If your app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` (Xcode 26's default for new projects), mark Domain and Data value types `nonisolated` so DTOs decode and entities construct off the main actor.
+- **Member-import visibility.** New Xcode projects turn on `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY`, so a file imports the module that declares the members it uses: `import os` in every file that logs through `LoggerFactory`'s `Logger`, `import PalDesignSystem` wherever you call `.textStyle`.
 - **Never edit Pal in DerivedData.** A pinned dependency is checked out read-only; edits there are untracked and vanish on the next resolve. To change the foundation, edit its repo — the local-override loop is in [GettingStarted](https://github.com/Mesrine23/pal-mvvm-foundation/blob/main/Documentation/GettingStarted.md#updating-the-foundation-while-building-your-app).
 - **Pin a tag, never a branch.** SemVer is CI-enforced since `1.0.0`, so `from:` is safe and minors never break you. A branch pin chases a moving commit with no contract.
 - **`URLSession` retries dropped connections beneath Pal**, so one logical `send()` can hit your server more than once and `RetryInterceptor` multiplies that. Size rate limits and idempotency budgets accordingly.
