@@ -111,7 +111,7 @@ Every screen: `@MainActor @Observable` ViewModel holding one or more `Loader<Val
 
 ## Patterns & evolution (binding)
 
-- **Delegation (child → owner):** when a child reports back to its owner (navigation, flow completion), use a `‹Context›Delegate` — `@MainActor`, `AnyObject`, held **weak**, intent-named. A closure for a one-shot callback; an `AsyncStream` for broadcast events (`AuthEvent`). See [DECISIONS §6](Documentation/DECISIONS.md).
+- **Delegation (child → owner):** when a child reports back to its owner (navigation, flow completion), use a `‹Context›Delegate` — `@MainActor`, `AnyObject`, held **weak**, intent-named. A closure for a one-shot callback; an `AsyncStream` for events (`AuthEvent`, whose stream has one consumer). See [DECISIONS §6](Documentation/DECISIONS.md).
 - **Compatibility — open to extension, closed to modification:** the public API is a contract for the apps on Pal. Additive only; new protocol requirements ship with default impls; **deprecate (`@available`), never delete** pre-major; consumers track SemVer **tags**, never branches. Details and the `api-stability` gate: [Sources/AGENTS.md](Sources/AGENTS.md).
 - **Source control:** GitFlow (`main` live/tagged · `develop` integration · `feature/*` off develop · `hotfix/*` off main → both). **Push the task branch and ask before merging.** Full policy in [CONTRIBUTING](CONTRIBUTING.md).
 - **Releases:** a release is `develop → main` plus a SemVer tag, a CHANGELOG entry, and a GitHub Release. **Every CHANGELOG entry opens with an `Affects:` line** naming the products it touches — how to derive and trim it is in [.claude/rules/changelog.md](.claude/rules/changelog.md), which loads when you open the file.
