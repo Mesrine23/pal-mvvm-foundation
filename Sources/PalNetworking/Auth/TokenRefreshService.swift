@@ -6,6 +6,8 @@ public protocol TokenRefreshService: Sendable {
     /// Exchanges a refresh token for a fresh token pair.
     /// - Parameter refreshToken: The current refresh token.
     /// - Returns: The new token pair.
-    /// - Throws: Any error when the exchange fails; ``TokenProvider`` treats it as a dead session.
+    /// - Throws: ``TransientRefreshFailure`` when the failure shouldn't end the
+    ///   session, which ``TokenProvider`` then keeps. Any other error when the
+    ///   exchange fails; ``TokenProvider`` treats it as a dead session.
     func refresh(using refreshToken: String) async throws -> AuthTokens
 }

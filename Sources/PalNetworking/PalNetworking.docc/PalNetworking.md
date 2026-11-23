@@ -41,6 +41,7 @@ For the narrative guide, see the repository's `Documentation/Products/PalNetwork
 - ``TokenProvider``
 - ``TokenStore``
 - ``TokenRefreshService``
+- ``TransientRefreshFailure``
 - ``AuthTokens``
 - ``AuthEvent``
 - ``AuthError``

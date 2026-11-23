@@ -1,5 +1,6 @@
-/// Owns token access and **single-flight refresh**: when N requests hit 401
-/// concurrently, exactly one network refresh runs and every caller awaits it.
+/// Owns token access and **single-flight refresh**: when N requests have their
+/// token rejected concurrently, one network refresh runs and every caller awaits
+/// it — or none, while a ``TransientRefreshFailure/retryAfter`` quiet period lasts.
 ///
 /// The guarantee holds because the in-flight check and assignment happen with no
 /// suspension point between them, so the actor can never create a second task
@@ -10,9 +11,35 @@
 /// is gone and the app should present login.
 public actor TokenProvider {
 
+    enum RefreshOutcome: Sendable {
+        case token(String)
+        case ended(AuthError)
+        case kept(NetworkError)
+    }
+
+    private struct QuietPeriod {
+        let refreshToken: String
+        let until: ContinuousClock.Instant
+        let error: NetworkError
+
+        init?(after failure: TransientRefreshFailure, refreshToken: String) {
+            guard let retryAfter = failure.retryAfter, retryAfter > .zero else {
+                return nil
+            }
+            self.refreshToken = refreshToken
+            until = .now + retryAfter
+            error = failure.networkError
+        }
+
+        func covers(_ refreshToken: String) -> Bool {
+            refreshToken == self.refreshToken && ContinuousClock.now < until
+        }
+    }
+
     private let store: any TokenStore
     private let refresher: any TokenRefreshService
     private var inFlight: Task<String, any Error>?
+    private var quietPeriod: QuietPeriod?
     private let continuation: AsyncStream<AuthEvent>.Continuation
 
     /// Auth lifecycle notifications. Single-consumer: iterate from one place
@@ -34,27 +61,44 @@ public actor TokenProvider {
         await store.tokens()?.accessToken
     }
 
-    /// Refreshes the token pair, coalescing concurrent callers into one network call.
+    /// Refreshes the token pair, coalescing concurrent callers into one network call
+    /// (none while a ``TransientRefreshFailure/retryAfter`` quiet period lasts).
     /// - Returns: The fresh access token.
-    /// - Throws: ``AuthError`` when no session exists or the refresh fails;
-    ///   both clear the store and emit ``AuthEvent/loggedOut``.
+    /// - Throws: ``AuthError/notAuthenticated`` when no session exists, or
+    ///   ``AuthError/refreshFailed`` when the refresh fails; both clear the store
+    ///   and emit ``AuthEvent/loggedOut``. A refresh that fails with
+    ///   ``TransientRefreshFailure`` also throws ``AuthError/refreshFailed``, but
+    ///   keeps the session and emits nothing.
     public func refresh() async throws(AuthError) -> String {
+        switch await refreshOutcome() {
+        case .token(let token):
+            return token
+        case .ended(let error):
+            throw error
+        case .kept:
+            throw .refreshFailed
+        }
+    }
+
+    func refreshOutcome() async -> RefreshOutcome {
         if let inFlight {
-            return try await join(inFlight)
+            return await Self.settle(inFlight)
         }
         let task = Task { try await self.performRefresh() }
         inFlight = task
         defer { inFlight = nil }
-        return try await join(task)
+        return await Self.settle(task)
     }
 
-    private func join(_ task: Task<String, any Error>) async throws(AuthError) -> String {
+    private static func settle(_ task: Task<String, any Error>) async -> RefreshOutcome {
         do {
-            return try await task.value
+            return .token(try await task.value)
         } catch let error as AuthError {
-            throw error
+            return .ended(error)
+        } catch let failure as TransientRefreshFailure {
+            return .kept(failure.networkError)
         } catch {
-            throw .refreshFailed
+            return .ended(.refreshFailed)
         }
     }
 
@@ -63,15 +107,23 @@ public actor TokenProvider {
             await signOut()
             throw AuthError.notAuthenticated
         }
+        if let quietPeriod, quietPeriod.covers(refreshToken) {
+            throw TransientRefreshFailure(quietPeriod.error)
+        }
+        let tokens: AuthTokens
         do {
-            let tokens = try await refresher.refresh(using: refreshToken)
-            await store.save(tokens)
-            continuation.yield(.refreshed)
-            return tokens.accessToken
+            tokens = try await refresher.refresh(using: refreshToken)
+        } catch let failure as TransientRefreshFailure {
+            quietPeriod = QuietPeriod(after: failure, refreshToken: refreshToken)
+            throw failure
         } catch {
             await signOut()
             throw AuthError.refreshFailed
         }
+        await store.save(tokens)
+        quietPeriod = nil
+        continuation.yield(.refreshed)
+        return tokens.accessToken
     }
 
     private func signOut() async {
