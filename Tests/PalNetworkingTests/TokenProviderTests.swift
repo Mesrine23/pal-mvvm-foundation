@@ -77,26 +77,24 @@ struct TokenProviderTests {
     func successSavesAndEmitsRefreshed() async throws {
         let store = InMemoryTokenStore(tokens: AuthTokens(accessToken: "stale", refreshToken: "valid"))
         let provider = TokenProvider(store: store, refresher: CountingRefresher(delay: .zero))
-        var events = provider.events.makeAsyncIterator()
 
         let token = try await provider.refresh()
 
         #expect(token == "fresh-1")
         #expect(await store.tokens()?.accessToken == "fresh-1")
-        #expect(await events.next() == .refreshed)
+        #expect(await events(of: provider) == [.refreshed])
     }
 
     @Test("Failed refresh clears the session and emits .loggedOut")
     func failureClearsSessionAndEmitsLoggedOut() async throws {
         let store = InMemoryTokenStore(tokens: AuthTokens(accessToken: "stale", refreshToken: "valid"))
         let provider = TokenProvider(store: store, refresher: CountingRefresher(delay: .zero, fails: true))
-        var events = provider.events.makeAsyncIterator()
 
         await #expect(throws: AuthError.refreshFailed) {
             try await provider.refresh()
         }
         #expect(await store.tokens() == nil)
-        #expect(await events.next() == .loggedOut)
+        #expect(await events(of: provider) == [.loggedOut])
     }
 
     @Test("Missing refresh token throws .notAuthenticated and emits .loggedOut")
@@ -105,11 +103,10 @@ struct TokenProviderTests {
             store: InMemoryTokenStore(tokens: nil),
             refresher: CountingRefresher(delay: .zero)
         )
-        var events = provider.events.makeAsyncIterator()
 
         await #expect(throws: AuthError.notAuthenticated) {
             try await provider.refresh()
         }
-        #expect(await events.next() == .loggedOut)
+        #expect(await events(of: provider) == [.loggedOut])
     }
 }
