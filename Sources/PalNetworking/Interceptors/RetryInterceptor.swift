@@ -5,9 +5,11 @@ import Foundation
 /// respecting task cancellation: a `.cancelled` failure is never retried. Place it
 /// outside ``AuthInterceptor`` so auth handling runs fresh on every attempt.
 ///
-/// Per request, ``RequestOptions/maxRetries`` overrides the cap (`0` = never
-/// retry). When an error carries a `Retry-After` hint (429/503), the server's
-/// delay is honored instead of the backoff, capped at 30 seconds.
+/// The HTTP method plays no part: a POST is retried like a GET. Per request,
+/// ``RequestOptions/maxRetries`` overrides the cap; `0` means never retry, for a
+/// request that mustn't be sent twice. When an error carries a `Retry-After` hint
+/// (429/503), the server's delay is honored instead of the backoff, capped at 30
+/// seconds.
 ///
 /// The transport itself may transparently retry dropped connections before this
 /// interceptor sees anything, so servers can observe more physical attempts
@@ -30,7 +32,8 @@ public struct RetryInterceptor: Interceptor {
     }
 
     /// Creates a retry interceptor that retries the failures the app says are
-    /// worth another attempt.
+    /// worth another attempt — leaving out, say, a backend's validation error sent
+    /// as a 500, which would fail the same way again.
     /// - Parameters:
     ///   - maxRetries: Additional attempts after the first failure. Defaults to 2.
     ///   - baseDelay: The first backoff delay; doubles per attempt. Defaults to 300 ms.

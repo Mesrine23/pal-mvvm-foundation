@@ -22,7 +22,7 @@ let store = KeychainTokenStore(
 let tokenProvider = TokenProvider(store: store, refresher: myRefreshService)
 ```
 
-Wire `tokenProvider` into `AuthInterceptor` (see [PalNetworking](PalNetworking.md)). On logout, `store.clear()` is called for you when the session ends.
+Wire `tokenProvider` into `AuthInterceptor` (see [PalNetworking](PalNetworking.md#auth-refresh-single-flight)). Log in by saving the pair your login call returns (`await store.save(tokens)`), and log out with `await tokenProvider.logOut()` rather than `store.clear()`, so a refresh that's still running can't save its tokens back. When the session ends by itself, `TokenProvider` clears the store for you and emits `.loggedOut`.
 
 ## Biometrics
 

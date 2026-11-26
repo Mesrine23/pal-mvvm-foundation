@@ -26,7 +26,7 @@ extension AnalyticsEvent {
 // Track from ViewModels (never Views, never repositories):
 tracker.track(.userSignedIn(method: "apple"))
 tracker.identify(userID: user.id)
-tracker.reset()   // on logout — pairs with AuthEvent.loggedOut
+tracker.reset()   // at every session end: your own logout and AuthEvent.loggedOut
 ```
 
 ## Wiring providers (composition root)

@@ -1,12 +1,24 @@
 import Foundation
 
-/// Attaches the bearer token to authenticated requests and, on a token rejection
-/// (by default any 401; see ``init(tokenProvider:isTokenRejection:)``), retries
-/// once with a fresh token from ``TokenProvider``: from its single-flight refresh,
-/// or the token that already replaced the rejected one. A rejection of a request
-/// that carried no token, or whose session has since ended, starts nothing and
-/// reaches the caller as it is. Requests with `requiresAuth == false` pass through
-/// untouched — the refresh call itself relies on that to avoid recursion.
+/// Attaches the bearer token to authenticated requests and, on a token rejection,
+/// retries once with a fresh token from ``TokenProvider``: from its single-flight
+/// refresh, or the token that already replaced the rejected one. What counts as a
+/// rejection is the app's call (``init(tokenProvider:isTokenRejection:)``); by
+/// default it's any 401.
+///
+/// A call whose rejection can't be fixed fails with:
+/// - the failure's ``TransientRefreshFailure/networkError``, when the refresher
+///   kept the session;
+/// - its own rejection, when the refresh ended the session, which emits
+///   ``AuthEvent/loggedOut``;
+/// - the retried call's own answer, when the fresh token was rejected too — with
+///   no second refresh;
+/// - its own rejection, with no refresh and no event, when it carried no token or
+///   its session has ended since.
+///
+/// Requests with `requiresAuth == false` pass through untouched — the refresh
+/// call itself relies on that to avoid recursion. Place it inside
+/// ``RetryInterceptor``, so every attempt carries the current token.
 public struct AuthInterceptor: Interceptor {
 
     private let tokenProvider: TokenProvider
@@ -19,12 +31,15 @@ public struct AuthInterceptor: Interceptor {
     }
 
     /// Creates an auth interceptor that refreshes only for the failures the app
-    /// recognises as a rejected access token.
+    /// recognises as a rejected access token. That can leave out an API gateway's
+    /// own 401 for a rejected API key, or take in a 403 that a backend sends for an
+    /// expired token.
     /// - Parameters:
     ///   - tokenProvider: The single-flight token owner.
     ///   - isTokenRejection: Whether a failed authenticated call means its access
-    ///     token was rejected. It sees the whole ``NetworkError``: status, headers
-    ///     and body. Failures it doesn't accept reach the caller unchanged.
+    ///     token was rejected. It sees the whole ``NetworkError`` — status, headers
+    ///     and body — and is asked about every failure, `.cancelled` included.
+    ///     Failures it doesn't accept reach the caller unchanged.
     public init(tokenProvider: TokenProvider, isTokenRejection: @escaping @Sendable (NetworkError) -> Bool) {
         self.tokenProvider = tokenProvider
         self.isTokenRejection = isTokenRejection

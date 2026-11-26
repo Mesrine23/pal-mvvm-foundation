@@ -43,7 +43,7 @@ public struct Request<Response: Decodable & Sendable>: Sendable {
     ///   - query: Query items. Defaults to empty.
     ///   - headers: Additional headers. Defaults to empty.
     ///   - body: The payload. Defaults to `nil`.
-    ///   - options: Per-request flags. Defaults to ``RequestOptions/init(requiresAuth:flags:)`` defaults.
+    ///   - options: Per-request options. Defaults to `RequestOptions()`.
     public init(
         method: HTTPMethod = .get,
         path: String,

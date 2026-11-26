@@ -175,7 +175,7 @@ actor ScriptedRefresher: TokenRefreshService {
     }
 }
 
-// MARK: - A refresher as an app writes one
+// MARK: - A refresher as an app writes one: the PalNetworking guide's, so change both together
 
 struct TokenPairDTO: Decodable, Sendable {
     let accessToken: String
@@ -188,7 +188,7 @@ extension Request where Response == TokenPairDTO {
             method: .post,
             path: "/auth/refresh",
             body: .json(["refreshToken": refreshToken]),
-            options: RequestOptions(requiresAuth: false, maxRetries: 0)
+            options: RequestOptions(requiresAuth: false, timeout: .seconds(10), maxRetries: 0)
         )
     }
 }

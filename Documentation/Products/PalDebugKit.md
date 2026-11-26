@@ -30,11 +30,16 @@ let client = HTTPClient(
     interceptors: interceptors
 )
 #else
-let client = HTTPClient(baseURL: prodURL, interceptors: [LoggingInterceptor(), RetryInterceptor()])
+let client = HTTPClient(
+    baseURL: prodURL,
+    interceptors: [LoggingInterceptor(), RetryInterceptor(), AuthInterceptor(tokenProvider: tokenProvider)]
+)
 #endif
 ```
 
 Order is **inspector → mock → Logging → Retry → Auth → transport**, so mocked calls are logged for free and the inspector times each exchange from its start. It records the exchange when it finishes, so a call still in flight isn't in Logs yet.
+
+`tokenProvider` comes from PalNetworking's [auth wiring](PalNetworking.md#auth-refresh-single-flight). Build the client your refresher uses on the same `baseURLProvider`, with the inspector and mock interceptors but no `AuthInterceptor`, so an environment switch moves login and refresh too, and Logs show them.
 
 ## Presenting + reacting to switches
 
@@ -45,7 +50,8 @@ rootView
     .onShake { PalDebugTools.shared.present() }
     .task {
         for await change in PalDebugTools.shared.environmentChanges {
-            // your reset: cancel in-flight work, clear tokens + cache, reset navigation
+            // your reset: cancel in-flight work, then end the session as your logout does
+            // (await tokenProvider.logOut(), clear caches, reset navigation)
         }
     }
     #endif

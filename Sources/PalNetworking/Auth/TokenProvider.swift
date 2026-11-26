@@ -1,18 +1,27 @@
-/// Owns token access and **single-flight refresh**: when N requests have their
-/// token rejected concurrently, one network refresh runs and every caller awaits
-/// it — or none, while a ``TransientRefreshFailure/retryAfter`` quiet period lasts.
+/// Owns the session's tokens and refreshes them **single-flight**: token
+/// rejections that overlap a refresh join it, so they share one refresher call —
+/// or none, while a ``TransientRefreshFailure/retryAfter`` quiet period lasts.
 /// A rejection of the token the last refresh replaced retries with its
-/// replacement; one that carried no token, or whose session already ended,
+/// replacement; one that carried no token, or whose session has ended since,
 /// starts nothing and emits nothing.
 ///
-/// The guarantee holds because the in-flight check and assignment happen with no
-/// suspension point between them, so the actor can never create a second task
+/// Nothing refreshes ahead of expiry: ``AuthTokens/expiresAt`` is stored, never
+/// read. What counts as a rejection is the app's call
+/// (``AuthInterceptor/init(tokenProvider:isTokenRejection:)``), and so is which
+/// refresh failures keep the session: the refresher throws
+/// ``TransientRefreshFailure`` for those, and any other error ends it.
+///
+/// - **Login:** save the pair with ``TokenStore/save(_:)``. The store is read for
+///   every authenticated request, so the next one carries it.
+/// - **Logout:** call ``logOut()``, and await it before saving another user's
+///   session. It emits nothing.
+/// - **A session that ends by itself:** ``events`` emits ``AuthEvent/loggedOut``.
+///   Observe it from one place, the root coordinator, and present login.
+///
+/// Single-flight holds because the in-flight check and assignment happen with no
+/// suspension point between them, so the actor never creates a second refresh
 /// while one is registered. Callers that arrive during a refresh join it via
 /// actor reentrancy — that interleaving is the design.
-///
-/// Observe ``events`` from the root coordinator: `.loggedOut` means the session
-/// ended by itself and the app should present login. When the user logs out,
-/// call ``logOut()``, which emits nothing.
 public actor TokenProvider {
 
     enum RefreshOutcome: Sendable {
@@ -62,8 +71,10 @@ public actor TokenProvider {
     private var pendingWrite: Task<Void, Never>?
     private let continuation: AsyncStream<AuthEvent>.Continuation
 
-    /// Auth lifecycle notifications. Single-consumer: iterate from one place
-    /// (the root coordinator).
+    /// Auth lifecycle notifications, for a single consumer: iterate them from one
+    /// place, the root coordinator. A second iterator doesn't get copies — each
+    /// event goes to only one of them. Events sent before the iteration starts are
+    /// buffered and delivered when it does.
     public nonisolated let events: AsyncStream<AuthEvent>
 
     /// Creates a token provider.
@@ -82,12 +93,20 @@ public actor TokenProvider {
     }
 
     /// Ends the session at the app's request, when the user logs out: clears the
-    /// stored tokens, and makes a refresh that's still running drop its result. That
-    /// refresh saves nothing; a save it already started is waited for and cleared.
-    /// Emits no event: ``AuthEvent/loggedOut`` is for a session that ended by itself.
+    /// stored tokens, ends any quiet period, and makes a refresh that's still
+    /// running drop its result. That refresh saves nothing, and a save it already
+    /// started is waited for and cleared. The requests waiting on it fail with
+    /// their own token rejection, and a later rejection of the ended session's
+    /// tokens starts nothing.
+    ///
+    /// Emits no event: ``AuthEvent/loggedOut`` is for a session that ended by
+    /// itself. Run the app's end-of-session cleanup where it calls this, the same
+    /// cleanup as for `.loggedOut`.
     ///
     /// Until it returns, requests go out without a token and no refresh starts.
-    /// Await it before saving another session with ``TokenStore/save(_:)``.
+    /// Await it before saving another session with ``TokenStore/save(_:)``:
+    /// without it, a late call of the old session can be retried with the new
+    /// one's token.
     public func logOut() async {
         let racingWrite = pendingWrite
         generation &+= 1
@@ -103,15 +122,16 @@ public actor TokenProvider {
         }
     }
 
-    /// Refreshes the token pair, coalescing concurrent callers into one network call
-    /// (none while a ``TransientRefreshFailure/retryAfter`` quiet period lasts).
+    /// Refreshes the token pair now, joining a refresh that's already running.
+    /// ``AuthInterceptor`` doesn't need it: it refreshes on a token rejection.
     /// - Returns: The fresh access token.
-    /// - Throws: ``AuthError/notAuthenticated`` when no session exists, or
-    ///   ``AuthError/refreshFailed`` when the refresh fails; both clear the store
-    ///   and emit ``AuthEvent/loggedOut``. A refresh that fails with
-    ///   ``TransientRefreshFailure`` also throws ``AuthError/refreshFailed``, but
-    ///   keeps the session and emits nothing. While ``logOut()`` runs, or when it
-    ///   dropped the refresh, throws ``AuthError/notAuthenticated`` and emits nothing.
+    /// - Throws: ``AuthError/refreshFailed`` when the refresh fails. That ends the
+    ///   session — the store is cleared and ``AuthEvent/loggedOut`` emitted —
+    ///   unless the refresher threw ``TransientRefreshFailure`` or a quiet period
+    ///   it asked for still lasts, which keeps the session and emits nothing.
+    ///   ``AuthError/notAuthenticated`` when there's no session: with none stored,
+    ///   it emits ``AuthEvent/loggedOut`` as a session end does; while a session is
+    ///   ending, or once ``logOut()`` dropped this refresh, it emits nothing.
     public func refresh() async throws(AuthError) -> String {
         switch await sharedRefresh() {
         case .token(let token):
