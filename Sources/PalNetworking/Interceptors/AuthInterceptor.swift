@@ -1,10 +1,12 @@
 import Foundation
 
 /// Attaches the bearer token to authenticated requests and, on a token rejection
-/// (by default any 401; see ``init(tokenProvider:isTokenRejection:)``), performs
-/// one single-flight refresh via ``TokenProvider`` and retries once with the
-/// fresh token. Requests with `requiresAuth == false` pass through untouched —
-/// the refresh call itself relies on that to avoid recursion.
+/// (by default any 401; see ``init(tokenProvider:isTokenRejection:)``), retries
+/// once with a fresh token from ``TokenProvider``: from its single-flight refresh,
+/// or the token that already replaced the rejected one. A rejection of a request
+/// that carried no token, or whose session has since ended, starts nothing and
+/// reaches the caller as it is. Requests with `requiresAuth == false` pass through
+/// untouched — the refresh call itself relies on that to avoid recursion.
 public struct AuthInterceptor: Interceptor {
 
     private let tokenProvider: TokenProvider
@@ -34,7 +36,8 @@ public struct AuthInterceptor: Interceptor {
         }
 
         var authenticated = request
-        if let token = await tokenProvider.currentToken() {
+        let credential = await tokenProvider.credential()
+        if let token = credential.token {
             authenticated.urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -44,14 +47,14 @@ public struct AuthInterceptor: Interceptor {
             guard isTokenRejection(error) else {
                 throw error
             }
-            switch await tokenProvider.refreshOutcome() {
+            switch await tokenProvider.refreshOutcome(rejecting: credential) {
             case .token(let freshToken):
                 authenticated.urlRequest.setValue("Bearer \(freshToken)", forHTTPHeaderField: "Authorization")
                 return try await next(authenticated)
-            case .ended:
-                throw error
             case .kept(let networkError):
                 throw networkError
+            case .ended, .noSession, .superseded:
+                throw error
             }
         }
     }

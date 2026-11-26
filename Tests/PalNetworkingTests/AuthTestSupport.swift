@@ -232,3 +232,186 @@ struct QuietPeriodRefresher: TokenRefreshService {
         }
     }
 }
+
+// MARK: - Sessions, late rejections and logOut()
+
+let stalePair = AuthTokens(accessToken: "access-0", refreshToken: "refresh-0")
+let loginPair = AuthTokens(accessToken: "login-access", refreshToken: "login-refresh")
+
+/// Any token but the stale pair's, such as the ones ``GatedRefresher`` issues.
+func acceptsRefreshedTokens(_ authorization: String?) -> Bool {
+    authorization != nil && authorization != "Bearer access-0"
+}
+
+/// An in-memory token store that can hold its next read, save or clear at a gate:
+/// a read returns the value it found before waiting, and a held save or clear
+/// takes effect only once the gate opens, so other store calls overtake it.
+actor GatedTokenStore: TokenStore {
+    private var current: AuthTokens?
+    private var readGate: Gate?
+    private var saveGate: Gate?
+    private var clearGate: Gate?
+    private(set) var saves: [AuthTokens] = []
+    private(set) var clearCount = 0
+    private(set) var isReadHeld = false
+    private(set) var isSaveHeld = false
+    private(set) var isClearHeld = false
+
+    init(_ tokens: AuthTokens?) {
+        current = tokens
+    }
+
+    func tokens() async -> AuthTokens? {
+        let value = current
+        if let gate = readGate {
+            readGate = nil
+            isReadHeld = true
+            await gate.wait()
+            isReadHeld = false
+        }
+        return value
+    }
+
+    func save(_ tokens: AuthTokens) async {
+        if let gate = saveGate {
+            saveGate = nil
+            isSaveHeld = true
+            await gate.wait()
+            isSaveHeld = false
+        }
+        current = tokens
+        saves.append(tokens)
+    }
+
+    func clear() async {
+        if let gate = clearGate {
+            clearGate = nil
+            isClearHeld = true
+            await gate.wait()
+            isClearHeld = false
+        }
+        current = nil
+        clearCount += 1
+    }
+
+    func holdNextRead(until gate: Gate) {
+        readGate = gate
+    }
+
+    func holdNextSave(until gate: Gate) {
+        saveGate = gate
+    }
+
+    func holdNextClear(until gate: Gate) {
+        clearGate = gate
+    }
+}
+
+/// The API's inner end: records each call, holds the first `holding` calls until
+/// ``release()``, and fails a call with ``tokenRejection`` unless it accepts it.
+actor HoldingBackend: Interceptor {
+    struct Call: Sendable, Equatable {
+        let path: String
+        let authorization: String?
+    }
+
+    private(set) var calls: [Call] = []
+    private(set) var rejections = 0
+    private var holdsLeft: Int
+    private var held: [CheckedContinuation<Void, Never>] = []
+    private let accepts: @Sendable (_ path: String, _ authorization: String?) -> Bool
+
+    init(holding: Int = 0, accepts: @escaping @Sendable (_ authorization: String?) -> Bool) {
+        self.init(holding: holding) { _, authorization in accepts(authorization) }
+    }
+
+    init(holding: Int = 0, acceptsCall: @escaping @Sendable (_ path: String, _ authorization: String?) -> Bool) {
+        holdsLeft = holding
+        accepts = acceptsCall
+    }
+
+    var heldCount: Int {
+        held.count
+    }
+
+    func intercept(_ request: TransportRequest, next: Next) async throws(NetworkError) -> NetworkResponse {
+        let authorization = request.urlRequest.value(forHTTPHeaderField: "Authorization")
+        let path = request.urlRequest.url?.path ?? ""
+        calls.append(Call(path: path, authorization: authorization))
+        if holdsLeft > 0 {
+            holdsLeft -= 1
+            await withCheckedContinuation { held.append($0) }
+        }
+        guard accepts(path, authorization) else {
+            rejections += 1
+            throw tokenRejection
+        }
+        return NetworkResponse(statusCode: 200, data: Data("ok".utf8))
+    }
+
+    func release() {
+        let releasing = held
+        held.removeAll()
+        releasing.forEach { $0.resume() }
+    }
+}
+
+/// Issues "access-N" and "refresh-N" on its Nth call, once that call's gate opens
+/// (`gates[N]`, else `gate`), unless `failure` returns an error for the call.
+actor GatedRefresher: TokenRefreshService {
+    private(set) var refreshTokensSent: [String] = []
+    private let gate: Gate?
+    private let gates: [Int: Gate]
+    private let failure: @Sendable (_ call: Int) -> (any Error)?
+
+    init(gate: Gate? = nil, gates: [Int: Gate] = [:], failure: @escaping @Sendable (_ call: Int) -> (any Error)? = { _ in nil }) {
+        self.gate = gate
+        self.gates = gates
+        self.failure = failure
+    }
+
+    var attempts: Int {
+        refreshTokensSent.count
+    }
+
+    func refresh(using refreshToken: String) async throws -> AuthTokens {
+        refreshTokensSent.append(refreshToken)
+        let call = refreshTokensSent.count
+        await (gates[call] ?? gate)?.wait()
+        if let error = failure(call) {
+            throw error
+        }
+        return AuthTokens(accessToken: "access-\(call)", refreshToken: "refresh-\(call)")
+    }
+}
+
+/// How a started call or refresh ended. A test waits for it with `waitUntil`
+/// instead of awaiting work that a broken guard may have left blocked at a gate.
+actor Completion<Failure: Error> {
+    private(set) var isDone = false
+    private(set) var failure: Failure?
+
+    func finish(with failure: Failure?) {
+        self.failure = failure
+        isDone = true
+    }
+}
+
+func startCall(_ call: @escaping @Sendable () async throws -> Data) -> Completion<NetworkError> {
+    let completion = Completion<NetworkError>()
+    Task { await completion.finish(with: await thrownError(call)) }
+    return completion
+}
+
+func startRefresh(_ provider: TokenProvider) -> Completion<AuthError> {
+    let completion = Completion<AuthError>()
+    Task {
+        do {
+            _ = try await provider.refresh()
+            await completion.finish(with: nil)
+        } catch {
+            await completion.finish(with: error as? AuthError)
+        }
+    }
+    return completion
+}

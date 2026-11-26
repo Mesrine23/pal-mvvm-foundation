@@ -5,8 +5,9 @@
 /// ``TokenProvider`` then keeps the stored tokens and emits no event. The calls
 /// waiting on the refresh fail with ``networkError`` instead of their token
 /// rejection, and a direct ``TokenProvider/refresh()`` throws
-/// ``AuthError/refreshFailed``. Any other error the refresher throws ends the
-/// session.
+/// ``AuthError/refreshFailed`` — unless ``TokenProvider/logOut()`` ended the
+/// session meanwhile, which drops the failure. Any other error the refresher
+/// throws ends the session.
 public struct TransientRefreshFailure: Error, Sendable {
 
     /// The error the calls waiting on the refresh fail with.
@@ -15,8 +16,9 @@ public struct TransientRefreshFailure: Error, Sendable {
     /// How long to hold off before the next refresh attempt with the same refresh
     /// token. Until it passes, ``TokenProvider`` answers later token rejections with
     /// ``networkError``, and a direct ``TokenProvider/refresh()`` with
-    /// ``AuthError/refreshFailed``, without calling the refresher. `nil`, zero or
-    /// less: the next rejection tries again.
+    /// ``AuthError/refreshFailed``, without calling the refresher;
+    /// ``TokenProvider/logOut()`` ends it early. `nil`, zero or less: the next
+    /// rejection tries again.
     public let retryAfter: Duration?
 
     /// Creates the failure.

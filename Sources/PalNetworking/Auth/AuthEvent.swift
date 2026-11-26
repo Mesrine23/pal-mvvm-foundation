@@ -4,6 +4,8 @@ public enum AuthEvent: Sendable, Equatable {
     /// Tokens were refreshed successfully.
     case refreshed
 
-    /// The session ended (no refresh token, or refresh failed) — route to login.
+    /// The session ended by itself — a refresh failed with any error but
+    /// ``TransientRefreshFailure``, or a direct ``TokenProvider/refresh()`` found no
+    /// session — route to login. ``TokenProvider/logOut()`` doesn't emit it.
     case loggedOut
 }
