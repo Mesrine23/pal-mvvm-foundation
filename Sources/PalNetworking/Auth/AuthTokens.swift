@@ -10,7 +10,9 @@ public struct AuthTokens: Codable, Sendable, Equatable {
     /// The long-lived token used to obtain fresh access tokens.
     public let refreshToken: String
 
-    /// When the access token expires, when the backend provides it.
+    /// When the access token expires, when the backend provides it. Stored for the
+    /// app's own use: ``TokenProvider`` never reads it, so nothing refreshes ahead
+    /// of expiry.
     public let expiresAt: Date?
 
     /// Creates a token pair.

@@ -3,7 +3,7 @@ import Foundation
 /// Per-request flags that travel through the interceptor chain alongside the `URLRequest`.
 public struct RequestOptions: Sendable {
 
-    /// Whether ``AuthInterceptor`` should attach a token and handle 401s.
+    /// Whether ``AuthInterceptor`` should attach a token and handle token rejections.
     /// Set `false` on the token-refresh request itself to avoid recursion.
     public var requiresAuth: Bool
 

@@ -297,7 +297,7 @@ RouterView(router: router, root: .list) { route in   // `root` is a Route case �
 
 ## 6. Optional wiring
 
-- **Auth refresh** — supply a `TokenRefreshService`, use `KeychainTokenStore` ([PalAuth](Products/PalAuth.md)), build a `TokenProvider`, add `AuthInterceptor`. See [PalNetworking](Products/PalNetworking.md).
+- **Auth refresh** — a client for login and refresh, without `AuthInterceptor`, which your `TokenRefreshService` uses; a `TokenProvider` over `KeychainTokenStore` ([PalAuth](Products/PalAuth.md)); then the API client with `AuthInterceptor`. Log in with `tokenStore.save(_:)`, log out with `tokenProvider.logOut()`, and observe `tokenProvider.events` once, from the root coordinator. See [PalNetworking](Products/PalNetworking.md#auth-refresh-single-flight).
 - **Analytics / flags** — register `NoOp…` by default; swap to real providers at the composition root. See [PalAnalytics](Products/PalAnalytics.md) / [PalFeatureFlags](Products/PalFeatureFlags.md).
 - **Theming** — works with `Theme.system` out of the box; brand with `.theme(myTheme)`. See [PalDesignSystem](Products/PalDesignSystem.md).
 - **Notifications** — create one `NotificationService` at the composition root (claims the delegate seat for cold-start taps); schedule typed `LocalNotification`s (fire-now or scheduled), forward APNs callbacks from a 5-line `UIApplicationDelegateAdaptor`, and route taps via the `responses` stream. See [PalNotifications](Products/PalNotifications.md).

@@ -31,6 +31,19 @@ struct ShortCircuitInterceptor: Interceptor {
     }
 }
 
+/// This backend answers 404 for a collection that is merely empty.
+private struct EmptyCollectionInterceptor: Interceptor {
+
+    func intercept(_ request: TransportRequest, next: Next) async throws(NetworkError) -> NetworkResponse {
+        do {
+            return try await next(request)
+        } catch {
+            guard error.statusCode == 404 else { throw error }
+            return NetworkResponse(statusCode: 200, data: Data("[]".utf8))
+        }
+    }
+}
+
 actor TransportSpy {
 
     private(set) var requests: [TransportRequest] = []
@@ -212,5 +225,25 @@ struct InterceptorChainTests {
         _ = try await chain.execute(request)
 
         #expect(await spy.authorizationHeader(ofCall: 0) == nil)
+    }
+
+    @Test("An inner interceptor can turn an error status into a success")
+    func innerInterceptorTurnsAnErrorStatusIntoASuccess() async throws {
+        let notFound = NetworkError.unacceptableStatus(code: 404, data: Data(), headers: [:])
+        let client = try makeClient([EmptyCollectionInterceptor(), RejectingTransport { _ in notFound }])
+
+        let favorites = try await client.send(Request<[String]>(path: "/favorites"))
+
+        #expect(favorites.isEmpty)
+    }
+
+    @Test("An inner interceptor leaves the errors it doesn't handle alone")
+    func innerInterceptorLeavesOtherErrorsAlone() async throws {
+        let serverError = NetworkError.unacceptableStatus(code: 500, data: Data(), headers: [:])
+        let client = try makeClient([EmptyCollectionInterceptor(), RejectingTransport { _ in serverError }])
+
+        let error = await thrownError { try await client.send(Request<Data>(path: "/favorites")) }
+
+        #expect(error?.statusCode == 500)
     }
 }

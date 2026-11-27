@@ -20,7 +20,7 @@ The rule that costs the most when broken: a test that fires work, sleeps a fixed
 
 ## Doc snippets are compile-guarded here
 
-Snippets shipped in the consumer guides are pinned by tests so they cannot silently drift from the API: the canonical ViewModel `load()`/`performLoad` shape in `PalPresentationTests`, the `RouterView` usage in `PalNavigationTests`, DesignSystem's scroll-observation and shimmer/skeleton snippets in `PalDesignSystemTests`, PalPersistence's private-suite testing snippet in `PalPersistenceTests`, and GettingStarted's catalog check in `LocalizationTests` (apps copy its `CatalogCheck.swift`). **Change a documented pattern and you change its guard test in the same commit** — two shipped snippets once reached adopters non-compiling, which is what these guards exist to prevent.
+Snippets shipped in the consumer guides are pinned by tests so they cannot silently drift from the API: the canonical ViewModel `load()`/`performLoad` shape in `PalPresentationTests`, the `RouterView` usage in `PalNavigationTests`, DesignSystem's scroll-observation and shimmer/skeleton snippets in `PalDesignSystemTests`, PalPersistence's private-suite testing snippet in `PalPersistenceTests`, PalNetworking's refresher and backend-convention interceptors in `PalNetworkingTests`, and GettingStarted's catalog check in `LocalizationTests` (apps copy its `CatalogCheck.swift`). **Change a documented pattern and you change its guard test in the same commit** — two shipped snippets once reached adopters non-compiling, which is what these guards exist to prevent.
 
 ## Style
 

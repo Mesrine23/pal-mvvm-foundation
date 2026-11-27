@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Testing
 @testable import PalNetworking
 
@@ -10,6 +11,10 @@ private actor AttemptCounter {
         attempts += 1
         return attempts
     }
+}
+
+private struct ErrorCode: Decodable {
+    let code: String
 }
 
 @Suite("RetryInterceptor")
@@ -25,6 +30,23 @@ struct RetryInterceptorTests {
             _ = await counter.next()
             throw NetworkError.unacceptableStatus(code: status, data: Data(), headers: headers)
         }
+    }
+
+    private func alwaysFailing(with error: NetworkError, _ counter: AttemptCounter) -> Next {
+        { _ throws(NetworkError) in
+            _ = await counter.next()
+            throw error
+        }
+    }
+
+    private static let validation500 = NetworkError.unacceptableStatus(
+        code: 500,
+        data: Data(#"{"code":"VALIDATION"}"#.utf8),
+        headers: [:]
+    )
+
+    private static func skipsValidationErrors(_ error: NetworkError) -> Bool {
+        error.isRetriable && error.serverError(as: ErrorCode.self)?.code != "VALIDATION"
     }
 
     @Test("A per-request maxRetries of 0 disables retries entirely")
@@ -100,5 +122,124 @@ struct RetryInterceptorTests {
         #expect(response.statusCode == 200)
         #expect(await counter.attempts == 2)
         #expect(elapsed < .seconds(2))
+    }
+
+    @Test("By default a 500 is retried, even when its body says it's a validation error")
+    func defaultRetriesAValidation500() async throws {
+        let counter = AttemptCounter()
+        let chain = InterceptorChain(
+            interceptors: [RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1))],
+            transport: alwaysFailing(with: Self.validation500, counter)
+        )
+
+        await #expect(throws: NetworkError.self) {
+            _ = try await chain.execute(makeRequest())
+        }
+        #expect(await counter.attempts == 3)
+    }
+
+    @Test("A shouldRetry predicate lets the app skip a validation 500")
+    func predicateSkipsAValidation500() async throws {
+        let counter = AttemptCounter()
+        let chain = InterceptorChain(
+            interceptors: [RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1), shouldRetry: Self.skipsValidationErrors)],
+            transport: alwaysFailing(with: Self.validation500, counter)
+        )
+
+        let request = try makeRequest()
+        do {
+            _ = try await chain.execute(request)
+            Issue.record("Expected the validation 500")
+        } catch {
+            #expect(error.statusCode == 500)
+        }
+        #expect(await counter.attempts == 1)
+    }
+
+    @Test("A shouldRetry predicate still retries a real outage")
+    func predicateStillRetriesAnOutage() async throws {
+        let counter = AttemptCounter()
+        let chain = InterceptorChain(
+            interceptors: [RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1), shouldRetry: Self.skipsValidationErrors)],
+            transport: alwaysFailing(counter, status: 503)
+        )
+
+        await #expect(throws: NetworkError.self) {
+            _ = try await chain.execute(makeRequest())
+        }
+        #expect(await counter.attempts == 3)
+    }
+
+    @Test("A cancelled failure is never retried, whatever the predicate says")
+    func cancelledFailureIsNeverRetried() async throws {
+        let retries = [
+            RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1)),
+            RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1)) { _ in true },
+        ]
+        for retry in retries {
+            let counter = AttemptCounter()
+            let chain = InterceptorChain(interceptors: [retry], transport: alwaysFailing(with: .cancelled, counter))
+
+            let request = try makeRequest()
+            do {
+                _ = try await chain.execute(request)
+                Issue.record("Expected .cancelled")
+            } catch {
+                guard case .cancelled = error else {
+                    Issue.record("Expected .cancelled, got \(error)")
+                    continue
+                }
+            }
+            #expect(await counter.attempts == 1)
+        }
+    }
+
+    @Test("The predicate is asked only while retries remain, and never about a cancelled call", arguments: [
+        (NetworkError.unacceptableStatus(code: 503, data: Data(), headers: [:]), 0, 0),
+        (NetworkError.unacceptableStatus(code: 503, data: Data(), headers: [:]), 2, 2),
+        (NetworkError.cancelled, 2, 0),
+    ])
+    func predicateIsAskedOnlyWhileRetriesRemain(failure: NetworkError, maxRetries: Int, expectedQuestions: Int) async throws {
+        let questions = OSAllocatedUnfairLock(initialState: 0)
+        let retry = RetryInterceptor(maxRetries: maxRetries, baseDelay: .milliseconds(1)) { _ in
+            questions.withLock { $0 += 1 }
+            return true
+        }
+        let chain = InterceptorChain(interceptors: [retry], transport: alwaysFailing(with: failure, AttemptCounter()))
+
+        await #expect(throws: NetworkError.self) {
+            _ = try await chain.execute(makeRequest())
+        }
+        #expect(questions.withLock { $0 } == expectedQuestions)
+    }
+
+    @Test("A cancelled task isn't retried, even when the predicate says yes")
+    func cancelledTaskIsNotRetried() async throws {
+        let counter = AttemptCounter()
+        let transport: Next = { _ throws(NetworkError) in
+            _ = await counter.next()
+            withUnsafeCurrentTask { $0?.cancel() }
+            throw NetworkError.unacceptableStatus(code: 503, data: Data(), headers: [:])
+        }
+        let chain = InterceptorChain(
+            interceptors: [RetryInterceptor(maxRetries: 2, baseDelay: .milliseconds(1)) { _ in true }],
+            transport: transport
+        )
+        let request = try makeRequest()
+
+        let failure = await Task { () -> NetworkError? in
+            do {
+                _ = try await chain.execute(request)
+                return nil
+            } catch {
+                return error as? NetworkError
+            }
+        }.value
+
+        guard case .cancelled? = failure else {
+            Issue.record("Expected .cancelled, got \(String(describing: failure))")
+            return
+        }
+        #expect(await counter.attempts == 1)
     }
 }

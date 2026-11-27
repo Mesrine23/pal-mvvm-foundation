@@ -156,10 +156,11 @@ final class SettingsViewModel {
         )
     }
 
-    /// Clears the demo token.
+    /// Clears the demo token and resets analytics, as every session end does.
     func logOut() async {
         await tokenStore.clear()
         isLoggedIn = false
         analytics.track(.loggedOut)
+        analytics.reset()
     }
 }
