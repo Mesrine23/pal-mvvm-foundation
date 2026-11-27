@@ -146,10 +146,14 @@ struct SessionRefresher: TokenRefreshService {
         do {
             let pair = try await client.send(.refreshTokens(refreshToken))
             return AuthTokens(accessToken: pair.accessToken, refreshToken: pair.refreshToken)
-        } catch where error.statusCode == 503 {
-            throw TransientRefreshFailure(error, retryAfter: error.retryAfter)
-        } catch where error.keepsSession {
-            throw TransientRefreshFailure(error, retryAfter: .seconds(2))
+        } catch {
+            if error.statusCode == 503 {
+                throw TransientRefreshFailure(error, retryAfter: error.retryAfter)
+            }
+            if error.keepsSession {
+                throw TransientRefreshFailure(error, retryAfter: .seconds(2))
+            }
+            throw error
         }
     }
 }
@@ -278,7 +282,8 @@ struct EmptyCollectionInterceptor: Interceptor {
     func intercept(_ request: TransportRequest, next: Next) async throws(NetworkError) -> NetworkResponse {
         do {
             return try await next(request)
-        } catch where error.statusCode == 404 {
+        } catch {
+            guard error.statusCode == 404 else { throw error }
             return NetworkResponse(statusCode: 200, data: Data("[]".utf8))
         }
     }

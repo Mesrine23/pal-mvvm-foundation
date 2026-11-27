@@ -210,8 +210,11 @@ struct SessionKeepingRefresher: TokenRefreshService {
         do {
             let pair = try await client.send(.refreshTokens(refreshToken))
             return AuthTokens(accessToken: pair.accessToken, refreshToken: pair.refreshToken)
-        } catch where error.keepsSession {
-            throw TransientRefreshFailure(error)
+        } catch {
+            if error.keepsSession {
+                throw TransientRefreshFailure(error)
+            }
+            throw error
         }
     }
 }
@@ -225,10 +228,14 @@ struct QuietPeriodRefresher: TokenRefreshService {
         do {
             let pair = try await client.send(.refreshTokens(refreshToken))
             return AuthTokens(accessToken: pair.accessToken, refreshToken: pair.refreshToken)
-        } catch where error.statusCode == 503 {
-            throw TransientRefreshFailure(error, retryAfter: error.retryAfter)
-        } catch where error.keepsSession {
-            throw TransientRefreshFailure(error, retryAfter: .seconds(2))
+        } catch {
+            if error.statusCode == 503 {
+                throw TransientRefreshFailure(error, retryAfter: error.retryAfter)
+            }
+            if error.keepsSession {
+                throw TransientRefreshFailure(error, retryAfter: .seconds(2))
+            }
+            throw error
         }
     }
 }

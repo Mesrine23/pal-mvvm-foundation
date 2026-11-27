@@ -37,7 +37,8 @@ private struct EmptyCollectionInterceptor: Interceptor {
     func intercept(_ request: TransportRequest, next: Next) async throws(NetworkError) -> NetworkResponse {
         do {
             return try await next(request)
-        } catch where error.statusCode == 404 {
+        } catch {
+            guard error.statusCode == 404 else { throw error }
             return NetworkResponse(statusCode: 200, data: Data("[]".utf8))
         }
     }
